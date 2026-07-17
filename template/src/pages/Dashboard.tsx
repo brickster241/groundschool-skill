@@ -1,0 +1,160 @@
+import { Link } from 'react-router-dom'
+import { motion } from 'motion/react'
+import { ArrowRight, MoveRight } from 'lucide-react'
+import {
+  phases,
+  tracks,
+  tracksByPhase,
+  trackBySlug,
+  trackItemIds,
+  totalItems,
+  totalLessons,
+  totalHours,
+  weeks,
+} from '../data/curriculum'
+import { pipeline } from '../data/pipeline'
+import { meta } from '../data/meta'
+import { fractionDone, useProgress } from '../store'
+import { PipelineSchematic } from '../components/PipelineSchematic'
+import { ProgressRing } from '../components/ProgressRing'
+import { inline } from '../components/text'
+
+function useOverall() {
+  const checks = useProgress((s) => s.checks)
+  const done = Object.keys(checks).length
+  return { checks, done, frac: totalItems === 0 ? 0 : done / totalItems }
+}
+
+/** Next incomplete track in curriculum order, or the last visited one if unfinished. */
+function useUpNext() {
+  const checks = useProgress((s) => s.checks)
+  const last = useProgress((s) => s.lastTrack)
+  const lastTrack = last ? trackBySlug.get(last) : undefined
+  if (lastTrack) {
+    const ids = trackItemIds.get(lastTrack.id) ?? []
+    const frac = fractionDone(ids, checks)
+    if (frac < 1) return { track: lastTrack, frac, resumed: true }
+  }
+  for (const t of tracks) {
+    const frac = fractionDone(trackItemIds.get(t.id) ?? [], checks)
+    if (frac < 1) return { track: t, frac, resumed: false }
+  }
+  return { track: tracks[tracks.length - 1], frac: 1, resumed: false }
+}
+
+export function Dashboard() {
+  const { checks, done, frac } = useOverall()
+  const upNext = useUpNext()
+  const hasPipeline = pipeline.length > 0
+
+  return (
+    <div className="mx-auto max-w-5xl px-5 py-8 md:py-12">
+      {/* hero */}
+      <motion.header
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <p className="placard">{meta.eyebrow}</p>
+        <h1 className="mt-2 font-display text-4xl leading-none font-bold tracking-tight text-ink md:text-5xl">
+          {meta.repoName} <span className="text-amber">GROUND SCHOOL</span>
+        </h1>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{inline(meta.intro)}</p>
+        <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-wider text-faint">
+          <span><b className="text-ink">{tracks.length}</b> TRACKS</span>
+          <span><b className="text-ink">{totalLessons}</b> LESSONS</span>
+          <span><b className="text-ink">{totalItems}</b> CHECKLIST ITEMS</span>
+          <span><b className="text-ink">{totalHours[0]}–{totalHours[1]}</b> HRS EST</span>
+          {meta.statusChips.map((chip) => (
+            <span key={chip} className="text-ok">{chip}</span>
+          ))}
+        </div>
+      </motion.header>
+
+      {/* status strip */}
+      <motion.section
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1, duration: 0.5 }}
+        className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"
+      >
+        <Link
+          to={`/track/${upNext.track.slug}`}
+          className="group flex items-center justify-between gap-4 rounded-xl border border-amber/30 bg-panel px-5 py-4 transition-colors hover:border-amber/60"
+        >
+          <div>
+            <span className="placard text-amber">{upNext.resumed ? 'Resume' : 'Up next'}</span>
+            <div className="mt-1 font-display text-lg font-semibold text-ink">
+              T{String(upNext.track.num).padStart(2, '0')} — {upNext.track.title}
+            </div>
+            <p className="mt-0.5 max-w-xl text-xs text-dim">{upNext.track.tagline}</p>
+          </div>
+          <ArrowRight className="h-5 w-5 shrink-0 text-amber transition-transform group-hover:translate-x-1" />
+        </Link>
+        <div className="flex items-center gap-4 rounded-xl border border-line bg-panel px-5 py-4">
+          <ProgressRing fraction={frac} size={64} stroke={5} />
+          <div className="font-mono text-[11px] leading-relaxed tracking-wider text-dim">
+            <div><b className="text-ink">{done}</b> / {totalItems} DONE</div>
+            <div className="text-faint">ALL TRACKS</div>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* system map + phases */}
+      <section className={`mt-8 grid items-start gap-6 ${hasPipeline ? 'lg:grid-cols-[1.2fr_1fr]' : ''}`}>
+        {hasPipeline && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.18, duration: 0.5 }}
+          >
+            <PipelineSchematic />
+          </motion.div>
+        )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.26, duration: 0.5 }}
+          className="space-y-3"
+        >
+          <div className="placard">Phases</div>
+          {phases.map((phase) => {
+            const pts = tracksByPhase(phase.id)
+            const ids = pts.flatMap((t) => trackItemIds.get(t.id) ?? [])
+            const pfrac = fractionDone(ids, checks)
+            return (
+              <Link
+                key={phase.id}
+                to="/tracks"
+                className="flex items-center gap-4 rounded-xl border border-line bg-panel px-4 py-3 transition-colors hover:bg-panel2"
+              >
+                <ProgressRing fraction={pfrac} size={44} stroke={3.5} color={phase.color} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-display text-sm font-semibold text-ink">{phase.name}</div>
+                  <p className="truncate text-xs text-dim">{phase.blurb}</p>
+                </div>
+                <span className="font-mono text-[10px] text-faint">
+                  {pts.map((t) => `T${String(t.num).padStart(2, '0')}`).join(' ')}
+                </span>
+              </Link>
+            )
+          })}
+          {weeks.length > 0 && (
+            <Link
+              to="/planner"
+              className="flex items-center justify-between rounded-xl border border-dashed border-line px-4 py-3 text-sm text-dim transition-colors hover:border-hud/50 hover:text-ink"
+            >
+              Prefer a schedule? The {weeks.length}-week plan
+              <MoveRight className="h-4 w-4" />
+            </Link>
+          )}
+        </motion.div>
+      </section>
+
+      <footer className="mt-12 border-t border-line pt-4 text-center font-mono text-[10px] tracking-wider text-faint">
+        {meta.motto}
+      </footer>
+    </div>
+  )
+}

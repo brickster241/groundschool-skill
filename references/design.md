@@ -1,0 +1,67 @@
+# Design — the fixed system and the per-repo surface
+
+The template ships a complete, deliberate visual identity. **Instantiation personalizes
+content, not chrome** — the design system is shared across every ground school so that the
+craft invested once (spacing, motion, focus states, reduced-motion, contrast) is inherited by
+every repo, and so a user with several dashboards gets one coherent product. Do not restyle
+the shell per repo. If you extend the UI, extend it in the template's language, described here.
+
+## The identity: night-cockpit
+
+An instrument panel at night, not a "dark dashboard": blue-black surfaces, one warm working
+accent (instrument-backlight amber), cool HUD blue for data, and per-phase identifying hues.
+The metaphor is aviation ground school — placard labels, challenge/response checklists,
+mono indices — chosen because the product IS a pre-flight curriculum.
+
+## Tokens (from `src/index.css` `@theme`)
+
+| Token | Value | Role |
+|---|---|---|
+| `night` | `#0B0E14` | page (blue-black, never pure black) |
+| `panel` / `panel2` | `#11151D` / `#161C27` | raised surface / hover |
+| `line` | `#232B38` | hairline borders |
+| `ink` / `dim` / `faint` | `#E6EDF3` / `#8B98A9` / `#5B6675` | text hierarchy |
+| `amber` | `#FFB454` | THE working accent: progress, active, primary actions |
+| `hud` | `#7DD3FC` | data, links, code paths |
+| `ok` / `warn` | `#4ADE80` / `#F87171` | status only — never decorative |
+
+Type: **Chakra Petch** (display — squared, avionics), **IBM Plex Sans** (body),
+**IBM Plex Mono** (indices, placards, readouts). Self-hosted via fontsource; the app makes no
+network requests except user-clicked video embeds.
+
+Texture: a barely-there blueprint grid on the body. No gradients, no glows, no starfields.
+
+## Recurring elements (use these, don't invent parallels)
+
+- **Placard** (`.placard`): mono, uppercase, letterspaced section label.
+- **Mono index**: `T03·L1·04`, `W02·01` — sequence encoded, real information not decoration.
+- **Challenge/response row** (`CheckRow`): checkbox → index → kind chip → text; detail expands
+  beneath; completion = amber spring-stamp + strikethrough + dim.
+- **Progress ring** (`ProgressRing`): phase-colored, spring-animated.
+- **The schematic** (`PipelineSchematic`): the one signature element — spine with a flowing
+  amber pulse, stage nodes in phase colors. One per app, on the dashboard only.
+- **Deprecation banner**: warn-colored archive placard — the only sanctioned use of `warn`
+  outside destructive confirmation.
+
+## Motion rules
+
+Motion is `motion/react` springs and short fades: entrance staggers ≤ 0.06s/item, one-shot,
+never looping (exception: the schematic's pulse, which is the identity's single ambient
+animation). Everything respects `prefers-reduced-motion` (CSS handles the pulse; keep new
+motion behind the same discipline). If an addition needs a second ambient animation, it is
+probably wrong.
+
+## The per-repo surface (all of it lives in `src/data/`)
+
+| Field | What it personalizes |
+|---|---|
+| `meta.repoName` | wordmark + hero |
+| `meta.eyebrow` / `intro` / `motto` / `statusChips` | hero + footer voice |
+| `meta.systemMapTitle` / `systemMapFlow` | the schematic, in the repo's vocabulary |
+| `phases[].color` | the identifying hues (pick 4–6 distinguishable pastels on dark; amber
+  first is a good convention) |
+| `phases[].name` | the arc's chapter names — name them for THIS repo's journey |
+
+Copy is design: hero intro ≤ 2 sentences; phase blurbs one clause; taglines one sentence.
+The dashboard should read like the repo's own cockpit, not a template with a name injected —
+that effect comes entirely from the words, which is why curriculum.md holds the voice bar.

@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+@import '@fontsource/chakra-petch/400.css';
+@import '@fontsource/chakra-petch/500.css';
+@import '@fontsource/chakra-petch/600.css';
+@import '@fontsource/chakra-petch/700.css';
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+
+@theme {
+  /* Night-cockpit palette */
+  --color-ink: #e6edf3; /* paper-white ink */
+  --color-dim: #8b98a9; /* muted ink */
+  --color-faint: #5b6675; /* faintest ink */
+  --color-night: #0b0e14; /* page */
+  --color-panel: #11151d; /* raised surface */
+  --color-panel2: #161c27; /* hover surface */
+  --color-line: #232b38; /* hairline */
+  --color-amber: #ffb454; /* instrument backlight — the working accent */
+  --color-hud: #7dd3fc; /* HUD symbology blue */
+  --color-ok: #4ade80; /* completed */
+  --color-warn: #f87171; /* caution */
+
+  --font-display: 'Chakra Petch', system-ui, sans-serif;
+  --font-sans: 'IBM Plex Sans', system-ui, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scrollbar-color: #2a3342 #0b0e14;
+}
+
+body {
+  background: var(--color-night);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  /* blueprint grid, barely there */
+  background-image:
+    linear-gradient(rgba(125, 211, 252, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(125, 211, 252, 0.025) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+::selection {
+  background: rgba(255, 180, 84, 0.28);
+}
+
+/* eyebrow label — avionics placard */
+.placard {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-dim);
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+.font-mono {
+  font-family: var(--font-mono);
+}
+
+/* prose bodies rendered from data strings */
+.copy p + p {
+  margin-top: 0.75em;
+}
+.copy code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--color-hud);
+  background: rgba(125, 211, 252, 0.08);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.copy strong {
+  color: var(--color-ink);
+  font-weight: 600;
+}
+
+/* markdown notes preview */
+.notes-md {
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: var(--color-ink);
+}
+.notes-md h1, .notes-md h2, .notes-md h3 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  margin: 1em 0 0.4em;
+}
+.notes-md h1 { font-size: 1.15rem; }
+.notes-md h2 { font-size: 1.05rem; }
+.notes-md h3 { font-size: 0.95rem; }
+.notes-md p { margin: 0.5em 0; }
+.notes-md ul, .notes-md ol { margin: 0.5em 0; padding-left: 1.4em; }
+.notes-md ul { list-style: disc; }
+.notes-md ol { list-style: decimal; }
+.notes-md li { margin: 0.2em 0; }
+.notes-md code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(125, 211, 252, 0.08);
+  color: var(--color-hud);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.notes-md pre {
+  background: #0d1117;
+  border: 1px solid var(--color-line);
+  border-radius: 8px;
+  padding: 0.75em 1em;
+  overflow-x: auto;
+  margin: 0.6em 0;
+}
+.notes-md pre code { background: none; padding: 0; }
+.notes-md blockquote {
+  border-left: 2px solid var(--color-amber);
+  padding-left: 0.9em;
+  color: var(--color-dim);
+  margin: 0.6em 0;
+}
+.notes-md a { color: var(--color-hud); text-decoration: underline; text-underline-offset: 2px; }
+
+/* focus visibility */
+:focus-visible {
+  outline: 2px solid var(--color-amber);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* the pipeline pulse */
+@keyframes pulse-flow {
+  from { stroke-dashoffset: 48; }
+  to { stroke-dashoffset: 0; }
+}
+.flow-line {
+  stroke-dasharray: 4 44;
+  animation: pulse-flow 2.4s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .flow-line { animation: none; }
+  * { scroll-behavior: auto !important; }
+}
