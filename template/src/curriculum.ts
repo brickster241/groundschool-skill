@@ -1,7 +1,6 @@
 import type {
   BranchBundle,
   ChecklistItem,
-  Flashcard,
   GlossaryTerm,
   Lesson,
   Meta,
@@ -34,11 +33,7 @@ export interface Curriculum {
 }
 
 /** Assign stable position-derived ids. Content edits must APPEND, not reorder. */
-function assembleTrack(
-  draft: TrackDraft,
-  quizzes: BranchBundle['quizzes'],
-  flashcards: Record<string, Flashcard[]>,
-): Track {
+function assembleTrack(draft: TrackDraft, b: BranchBundle): Track {
   const lessons: Lesson[] = draft.lessons.map((l, li) => ({
     ...l,
     id: `${draft.id}.${li}`,
@@ -46,11 +41,17 @@ function assembleTrack(
       (it, ii): ChecklistItem => ({ ...it, id: `${draft.id}.${li}.${ii}` }),
     ),
   }))
-  return { ...draft, lessons, quiz: quizzes[draft.id], cards: flashcards[draft.id] }
+  return {
+    ...draft,
+    lessons,
+    quiz: b.quizzes[draft.id],
+    cards: b.flashcards[draft.id],
+    diagrams: b.diagrams[draft.id],
+  }
 }
 
 function assemble(branch: string, b: BranchBundle): Curriculum {
-  const tracks = b.tracks.map((t) => assembleTrack(t, b.quizzes, b.flashcards))
+  const tracks = b.tracks.map((t) => assembleTrack(t, b))
   const weeks: WeekPlan[] = b.planner.map((w) => ({
     ...w,
     items: w.items.map((it, ii) => ({ ...it, id: `wk${w.week}.${ii}` })),

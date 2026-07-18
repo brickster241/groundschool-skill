@@ -43,8 +43,14 @@ Texture: a barely-there blueprint grid on the body. No gradients, no glows, no s
 - **Checkride** (`Checkride`): the per-track exam — hud-blue framing (assessment, not
   progress), mono option letters, ok/warn feedback states, best score in the header.
 - **Flash deck** (`FlashDeck`): 3D flip cards (spring rotateY, stacked-deck peek behind,
-  progress dots, ←/→/space keys). Front face hud-labeled PROMPT, back face amber ANSWER.
-  Lives on track pages and the Revision page; ephemeral by design.
+  progress dots — a thin bar past 40 cards, ←/→/space keys). Front face hud-labeled PROMPT,
+  back face amber ANSWER. Lives on track pages and the Revision page; ephemeral by design.
+- **Diagram panel** (`DiagramPanel`): inline SVG architecture figures with placard title,
+  caption, and a spring lightbox. The SVG language: transparent background, `#11151D` boxes
+  on `#232B38` hairlines (rx 8–10), IBM Plex Mono labels (`#E6EDF3` titles / `#8B98A9` dim /
+  `#7DD3FC` file paths), **amber reserved for the one main flow**, dashed strokes for
+  return/feedback paths, arrowheads `#5B6675` (amber on the main flow). One idea per
+  diagram; viewBox ~860 wide so inline rendering stays legible.
 - **Branch switcher** (in `Layout`): mono branch chips with a spring `layoutId` pill;
   appears only when the registry has more than one branch.
 - **Deprecation banner**: warn-colored archive placard — `warn` appears only here, in

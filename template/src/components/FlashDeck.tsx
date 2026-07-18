@@ -133,18 +133,28 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
         >
           <ArrowLeft className="h-4 w-4" />
         </button>
-        <div className="flex max-w-[60%] flex-wrap items-center justify-center gap-1">
-          {dots.map((d) => (
-            <span
-              key={d}
-              className="h-1 rounded-full transition-all"
-              style={{
-                width: d === i ? 16 : 5,
-                background: d === i ? '#ffb454' : d < i ? '#5b6675' : '#232b38',
-              }}
+        {order.length > 40 ? (
+          /* big decks: dots become noise — one thin bar */
+          <div className="mx-4 h-1 max-w-[60%] flex-1 overflow-hidden rounded-full bg-line">
+            <div
+              className="h-full rounded-full bg-amber transition-all"
+              style={{ width: `${((i + 1) / order.length) * 100}%` }}
             />
-          ))}
-        </div>
+          </div>
+        ) : (
+          <div className="flex max-w-[60%] flex-wrap items-center justify-center gap-1">
+            {dots.map((d) => (
+              <span
+                key={d}
+                className="h-1 rounded-full transition-all"
+                style={{
+                  width: d === i ? 16 : 5,
+                  background: d === i ? '#ffb454' : d < i ? '#5b6675' : '#232b38',
+                }}
+              />
+            ))}
+          </div>
+        )}
         <button
           onClick={() => go(1)}
           disabled={i === order.length - 1}

@@ -20,6 +20,11 @@ Read in this order — each layer corrects the one below it:
    mapping what a learner must eventually read.
 4. **History, lightly.** `git log --oneline -30` and the merge summary show what the project
    has been fighting with lately — often the best clue to what is hard about it.
+5. **The repo's existing diagrams — audited, not trusted.** Inventory docs/ images, README
+   ASCII art, and wiki figures. For each: does it match the CURRENT code (module names,
+   stages, "future work" labels that have since shipped)? Record accurate ones as raw
+   material for the curriculum's diagrams, and stale ones as findings in the plan doc —
+   offer to refresh them in the host repo (in their own visual style) if the user wants.
 
 ## What to extract
 

@@ -19,6 +19,7 @@ import type { CodeAnchor, Meta, Resource } from '../data/types'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
+import { DiagramPanel } from '../components/DiagramPanel'
 import { FlashDeck } from '../components/FlashDeck'
 import { NotesEditor } from '../components/NotesEditor'
 import { ProgressRing } from '../components/ProgressRing'
@@ -213,6 +214,15 @@ export function TrackPage() {
             </h2>
             <Copy text={track.mentalModel} className="text-[14px] leading-relaxed text-ink/90" />
           </section>
+
+          {/* architecture diagrams */}
+          {track.diagrams && track.diagrams.length > 0 && (
+            <section className="space-y-4">
+              {track.diagrams.map((d) => (
+                <DiagramPanel key={d.title} d={d} />
+              ))}
+            </section>
+          )}
 
           <section className="rounded-xl border-l-2 bg-panel px-4 py-3" style={{ borderColor: phase.color }}>
             <h2 className="placard mb-1.5">Why this repo does it this way</h2>

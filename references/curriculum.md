@@ -109,6 +109,23 @@ deck plus an auto-built glossary deck; track pages show their own deck) — auth
 - Don't duplicate the glossary — its deck is auto-generated. Track cards should test
   *relationships and behavior*, not term definitions.
 
+**diagrams.ts** — architecture diagrams: `Record<trackId, DiagramSpec[]>`, SVGs authored in
+the branch's `diagrams/` folder and imported with `?raw` (rendered inline, so the app's fonts
+and palette apply; lightbox for free). Text-only learning goes flat — give every
+architecture-heavy track at least one diagram. The bar:
+
+- **Accuracy is the entire point.** Derive the diagram FROM the code, then verify every
+  box/label names a real module, file, or topic (same rule as code anchors). A wrong diagram
+  is worse than none — it teaches confidently and falsely.
+- **Audit the repo's own diagrams first** (docs/, README ASCII art, wiki images — see
+  analysis.md). Accurate ones: reference or adapt. Stale ones: flag them to the user and
+  update them in the host repo if authorized — and never copy their staleness into yours.
+- Visual language (spec in design.md, example in the template): night-cockpit palette,
+  mono labels, amber = the one main flow, hairline module boxes with hud-blue file paths,
+  dashed = return/feedback paths. One idea per diagram; 5–12 boxes; viewBox ~860 wide.
+- Caption states what the reader should SEE ("note the estimator sits outside the command
+  path"), not what the diagram is.
+
 **meta.ts** — every field, from the plan doc's aesthetic notes. `motto` is three short mono
 clauses that capture the repo's philosophy (the AMOS original: "SIMULATION-FIRST · HARDWARE
 WHEN IT IS THE ONLY THING LEFT · NED EVERYWHERE"). `statusChips` only for real, earned claims

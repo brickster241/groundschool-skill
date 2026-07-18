@@ -58,6 +58,17 @@ export interface Flashcard {
   back: string
 }
 
+/**
+ * An architecture diagram embedded in a track. `svg` is raw markup
+ * (author .svg files in the branch's diagrams/ folder, import with `?raw`) —
+ * rendered inline so the app's fonts and palette apply.
+ */
+export interface DiagramSpec {
+  title: string
+  caption?: string
+  svg: string
+}
+
 /** One Checkride question. Distractors should be real misconceptions, not filler. */
 export interface QuizQuestion {
   prompt: string
@@ -90,12 +101,16 @@ export interface Track {
   quiz?: QuizQuestion[]
   /** Attached at assemble time from the branch's flashcards map — do not author on drafts. */
   cards?: Flashcard[]
+  /** Attached at assemble time from the branch's diagrams map — do not author on drafts. */
+  diagrams?: DiagramSpec[]
   /** Set by the UPDATE protocol only (see Lesson.status). */
   status?: 'deprecated'
   statusNote?: string
 }
 
-export type TrackDraft = Omit<Track, 'lessons' | 'quiz' | 'cards'> & { lessons: LessonDraft[] }
+export type TrackDraft = Omit<Track, 'lessons' | 'quiz' | 'cards' | 'diagrams'> & {
+  lessons: LessonDraft[]
+}
 
 export interface Phase {
   id: string
@@ -137,6 +152,7 @@ export interface BranchBundle {
   pipeline: PipelineStage[]
   quizzes: Record<string, QuizQuestion[]>
   flashcards: Record<string, Flashcard[]>
+  diagrams: Record<string, DiagramSpec[]>
 }
 
 /** Per-branch configuration. The ONLY place the app shell reads branding from. */

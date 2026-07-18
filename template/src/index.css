@@ -143,6 +143,13 @@ textarea:focus-visible {
   outline: none;
 }
 
+/* inline architecture diagrams */
+.diagram-svg svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
 /* 3D flip cards (FlashDeck) */
 .flip-scene {
   perspective: 1400px;

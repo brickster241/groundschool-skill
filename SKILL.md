@@ -80,7 +80,9 @@ Follow `references/curriculum.md` — it is the quality bar, the voice, and the 
 Author into `src/branches/<branch>/`: `tracks/` (the example track shows every supported
 feature), `pipeline.ts`, `glossary.ts`, `planner.ts` (optional), `flashcards.ts` (per-concept
 revision decks — author these for every substantial track), `quizzes.ts` (Checkrides —
-optional per track, concept-weighted), and the phases/imports in the branch's `index.ts`.
+optional per track, concept-weighted), `diagrams.ts` + `diagrams/*.svg` (architecture
+figures for every architecture-heavy track — audit the repo's own diagrams first per
+analysis.md; accuracy over decoration), and the phases/imports in the branch's `index.ts`.
 
 Design decisions for any UI you touch (normally none) come from `references/design.md`.
 

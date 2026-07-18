@@ -63,6 +63,7 @@ export const bundle: BranchBundle = {
   ],
   pipeline: [],
   quizzes: {},
+  diagrams: {},
   flashcards: {
     t00: [
       { front: 'Sandbox card: what proves branch isolation?', back: 'Flip a card here, switch to main — main\'s decks are untouched. Content and progress are both per-branch.' },
