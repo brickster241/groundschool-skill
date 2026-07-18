@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { motion, AnimatePresence } from 'motion/react'
+import { motion } from 'motion/react'
 import DOMPurify from 'dompurify'
 import { Maximize2, X } from 'lucide-react'
 import type { DiagramSpec } from '../data/types'
@@ -52,12 +52,11 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
         )}
       </figure>
 
-      <AnimatePresence>
-        {open && (
+      {/* enter-only animation — exit-gated unmounts hang in throttled/hidden tabs */}
+      {open && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex flex-col bg-night/95 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           >
@@ -74,7 +73,6 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
             <motion.div
               initial={{ scale: 0.96, y: 8 }}
               animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.97 }}
               transition={{ type: 'spring', stiffness: 260, damping: 26 }}
               className="diagram-svg mx-auto w-full max-w-6xl flex-1 overflow-auto px-6 pb-8"
               onClick={(e) => e.stopPropagation()}
@@ -82,7 +80,6 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
             />
           </motion.div>
         )}
-      </AnimatePresence>
     </>
   )
 }
