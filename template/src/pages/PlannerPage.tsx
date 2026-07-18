@@ -1,21 +1,22 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { CalendarRange } from 'lucide-react'
-import { weeks, trackById } from '../data/curriculum'
-import { fractionDone, useProgress } from '../store'
+import { useCurriculum } from '../curriculum'
+import { fractionDone, useChecks } from '../store'
 import { CheckRow } from '../components/CheckRow'
 import { NotesEditor } from '../components/NotesEditor'
 
 export function PlannerPage() {
-  const checks = useProgress((s) => s.checks)
-  const allIds = weeks.flatMap((w) => w.items.map((i) => i.id))
+  const c = useCurriculum()
+  const checks = useChecks()
+  const allIds = c.weeks.flatMap((w) => w.items.map((i) => i.id))
   const overall = fractionDone(allIds, checks)
 
-  if (weeks.length === 0) {
+  if (c.weeks.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-5 py-16 text-center">
         <CalendarRange className="mx-auto h-6 w-6 text-faint" />
-        <p className="mt-3 text-sm text-dim">No study plan authored for this curriculum.</p>
+        <p className="mt-3 text-sm text-dim">No study plan authored for this branch.</p>
         <Link
           to="/tracks"
           className="mt-4 inline-block rounded-md border border-amber/40 px-3 py-1.5 font-mono text-[11px] tracking-wider text-amber transition-colors hover:bg-amber/10"
@@ -27,10 +28,10 @@ export function PlannerPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-8 md:py-12">
+    <div className="mx-auto max-w-3xl px-5 py-8 md:py-12" key={c.branch}>
       <p className="placard">A spine, not a cage</p>
       <h1 className="mt-2 font-display text-3xl font-bold text-ink">
-        The {weeks.length}-week pass
+        The {c.weeks.length}-week pass
       </h1>
       <p className="mt-2 text-sm leading-relaxed text-dim">
         Reverse-engineer the system: run it, read the file behind what you saw, prove it by
@@ -46,7 +47,7 @@ export function PlannerPage() {
       </div>
 
       <ol className="mt-8 space-y-6">
-        {weeks.map((week, wi) => {
+        {c.weeks.map((week, wi) => {
           const ids = week.items.map((i) => i.id)
           const done = ids.filter((id) => checks[id]).length
           return (
@@ -67,7 +68,7 @@ export function PlannerPage() {
                 <div className="flex items-center gap-3">
                   <span className="flex gap-1">
                     {week.trackIds.map((tid) => {
-                      const t = trackById.get(tid)
+                      const t = c.trackById.get(tid)
                       return t ? (
                         <Link
                           key={tid}

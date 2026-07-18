@@ -1,4 +1,4 @@
-import type { Meta } from './types'
+import type { Meta } from '../../data/types'
 
 /**
  * EXAMPLE meta — replace every field when instantiating for a real repo.
@@ -12,7 +12,6 @@ export const meta: Meta = {
     'The fundamentals under `~/Coding/example` — replace this intro with two sentences that name the repo, what it does, and what studying it leads to.',
   repoPath: '~/Coding/example',
   repoPathAbs: '/Users/you/Coding/example',
-  storageKey: 'groundschool-example-v1',
   statusChips: [],
   motto: 'READ THE CODE · PROVE IT BY CHANGING ONE THING · WRITE IT DOWN',
   systemMapTitle: 'System map — the one mental model',

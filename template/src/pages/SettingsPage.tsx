@@ -1,14 +1,15 @@
 import { useRef, useState } from 'react'
 import { Download, Upload, TriangleAlert } from 'lucide-react'
-import { exportState, useProgress } from '../store'
-import { totalItems } from '../data/curriculum'
-import { meta } from '../data/meta'
+import { useCurriculum } from '../curriculum'
+import { storeKey } from '../branches'
+import { exportState, useChecks, useNotes, useProgress } from '../store'
 
 export function SettingsPage() {
-  const checks = useProgress((s) => s.checks)
-  const notes = useProgress((s) => s.notes)
+  const c = useCurriculum()
+  const checks = useChecks()
+  const notes = useNotes()
   const importState = useProgress((s) => s.importState)
-  const resetAll = useProgress((s) => s.resetAll)
+  const resetBranch = useProgress((s) => s.resetBranch)
   const fileRef = useRef<HTMLInputElement>(null)
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -18,10 +19,10 @@ export function SettingsPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${meta.storageKey}-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `${storeKey}-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
-    setMsg('Progress exported.')
+    setMsg('Progress exported (all branches).')
   }
 
   const onImport = async (file: File) => {
@@ -38,24 +39,25 @@ export function SettingsPage() {
       <h1 className="mt-2 font-display text-3xl font-bold text-ink">Your data</h1>
       <p className="mt-2 text-sm leading-relaxed text-dim">
         Everything lives in this browser&rsquo;s localStorage (
-        <code className="font-mono text-hud">{meta.storageKey}</code>) — nothing leaves your
-        machine. Export a JSON snapshot to back it up or move browsers.
+        <code className="font-mono text-hud">{storeKey}</code>), sliced per branch — nothing
+        leaves your machine. Export a JSON snapshot (all branches) to back it up or move browsers.
       </p>
       <p className="mt-2 font-mono text-[10px] tracking-wider text-faint">
-        CURRICULUM BASELINE · {meta.baseline.branch} @ {meta.baseline.commit.slice(0, 7)} · {meta.baseline.date}
+        BRANCH {c.branch.toUpperCase()} · BASELINE {c.meta.baseline.branch} @{' '}
+        {c.meta.baseline.commit.slice(0, 7)} · {c.meta.baseline.date}
       </p>
 
       <div className="mt-6 grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-line bg-panel px-4 py-3">
           <div className="font-mono text-2xl font-medium text-ink tabular-nums">
             {Object.keys(checks).length}
-            <span className="text-sm text-faint">/{totalItems}</span>
+            <span className="text-sm text-faint">/{c.totalItems}</span>
           </div>
-          <div className="placard mt-1">Items checked</div>
+          <div className="placard mt-1">Items checked · {c.branch}</div>
         </div>
         <div className="rounded-xl border border-line bg-panel px-4 py-3">
           <div className="font-mono text-2xl font-medium text-ink tabular-nums">{noteCount}</div>
-          <div className="placard mt-1">Notebooks written</div>
+          <div className="placard mt-1">Notebooks · {c.branch}</div>
         </div>
       </div>
 
@@ -67,7 +69,7 @@ export function SettingsPage() {
           <Download className="h-4 w-4 text-amber" />
           <span>
             <span className="block text-sm text-ink">Export progress</span>
-            <span className="block text-xs text-dim">Checks, notes, and position — one JSON file.</span>
+            <span className="block text-xs text-dim">Checks, notes, scores — every branch, one JSON file.</span>
           </span>
         </button>
 
@@ -100,19 +102,23 @@ export function SettingsPage() {
           >
             <TriangleAlert className="h-4 w-4 text-warn" />
             <span>
-              <span className="block text-sm text-ink">Reset everything</span>
-              <span className="block text-xs text-dim">Clears all checks and notes. Asks first.</span>
+              <span className="block text-sm text-ink">Reset this branch</span>
+              <span className="block text-xs text-dim">
+                Clears checks and notes for {c.branch} only. Asks first.
+              </span>
             </span>
           </button>
         ) : (
           <div className="rounded-xl border border-warn/50 bg-panel px-4 py-3">
-            <p className="text-sm text-ink">Delete all progress and notes? Export first if unsure.</p>
+            <p className="text-sm text-ink">
+              Delete all progress and notes on <b>{c.branch}</b>? Export first if unsure.
+            </p>
             <div className="mt-2 flex gap-2">
               <button
                 onClick={() => {
-                  resetAll()
+                  resetBranch()
                   setConfirmReset(false)
-                  setMsg('Everything reset.')
+                  setMsg(`Branch ${c.branch} reset.`)
                 }}
                 className="rounded-md bg-warn/20 px-3 py-1.5 font-mono text-[11px] tracking-wider text-warn"
               >

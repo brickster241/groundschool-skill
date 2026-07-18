@@ -1,4 +1,4 @@
-import type { TrackDraft } from '../types'
+import type { TrackDraft } from '../../../data/types'
 
 /**
  * EXAMPLE TRACK — replace with real curriculum when instantiating.

@@ -1,24 +1,65 @@
 import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { Search, Radar, ListChecks, CalendarRange, BookA, NotebookPen, Settings2 } from 'lucide-react'
-import { phases, tracksByPhase, trackItemIds, weeks } from '../data/curriculum'
-import { meta } from '../data/meta'
-import { fractionDone, useProgress } from '../store'
+import { motion } from 'motion/react'
+import {
+  Search, Radar, ListChecks, CalendarRange, BookA, Layers, NotebookPen, Settings2, GitBranch,
+} from 'lucide-react'
+import { branchNames, useCurriculum } from '../curriculum'
+import { fractionDone, useChecks, useProgress } from '../store'
 import { CommandPalette } from './CommandPalette'
 
-const NAV = [
-  { to: '/', label: 'Flight Deck', icon: Radar, end: true },
-  { to: '/tracks', label: 'Tracks', icon: ListChecks, end: false },
-  { to: '/planner', label: 'Study Plan', icon: CalendarRange, end: false, needsWeeks: true },
-  { to: '/glossary', label: 'Glossary', icon: BookA, end: false },
-  { to: '/notes', label: 'Notes', icon: NotebookPen, end: false },
-  { to: '/settings', label: 'Data', icon: Settings2, end: false },
-].filter((n) => !n.needsWeeks || weeks.length > 0)
+/** Sidebar branch switcher — appears only when more than one branch is registered. */
+function BranchSwitcher() {
+  const branch = useProgress((s) => s.branch)
+  const setBranch = useProgress((s) => s.setBranch)
+  if (branchNames.length < 2) return null
+
+  return (
+    <div className="border-b border-line px-4 py-3">
+      <div className="placard mb-2 flex items-center gap-1.5">
+        <GitBranch className="h-3 w-3" /> Branch
+      </div>
+      <div className="flex flex-wrap gap-1">
+        {branchNames.map((b) => (
+          <button
+            key={b}
+            onClick={() => setBranch(b)}
+            className={`relative rounded-md px-2 py-1 font-mono text-[11px] transition-colors ${
+              b === branch ? 'text-night' : 'text-dim hover:text-ink'
+            }`}
+          >
+            {b === branch && (
+              <motion.span
+                layoutId="branch-pill"
+                className="absolute inset-0 rounded-md bg-amber"
+                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+              />
+            )}
+            <span className="relative">{b}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 export function Layout() {
+  const c = useCurriculum()
   const [paletteOpen, setPaletteOpen] = useState(false)
-  const checks = useProgress((s) => s.checks)
+  const checks = useChecks()
   const { pathname, hash } = useLocation()
+
+  const nav = [
+    { to: '/', label: 'Flight Deck', icon: Radar, end: true },
+    { to: '/tracks', label: 'Tracks', icon: ListChecks, end: false },
+    ...(c.weeks.length > 0
+      ? [{ to: '/planner', label: 'Study Plan', icon: CalendarRange, end: false }]
+      : []),
+    { to: '/revision', label: 'Revision', icon: Layers, end: false },
+    { to: '/glossary', label: 'Glossary', icon: BookA, end: false },
+    { to: '/notes', label: 'Notes', icon: NotebookPen, end: false },
+    { to: '/settings', label: 'Data', icon: Settings2, end: false },
+  ]
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -46,13 +87,15 @@ export function Layout() {
               GROUND SCHOOL
             </span>
             <span className="block font-mono text-[9px] tracking-[0.22em] text-faint uppercase">
-              {meta.repoName} · FUNDAMENTALS
+              {c.meta.repoName} · FUNDAMENTALS
             </span>
           </span>
         </NavLink>
 
+        <BranchSwitcher />
+
         <nav className="px-2 py-3">
-          {NAV.map(({ to, label, icon: Icon, end }) => (
+          {nav.map(({ to, label, icon: Icon, end }) => (
             <NavLink
               key={to}
               to={to}
@@ -78,8 +121,8 @@ export function Layout() {
         </nav>
 
         <div className="mt-2 flex-1 space-y-4 overflow-y-auto px-4 pb-4">
-          {phases.map((phase) => {
-            const pts = tracksByPhase(phase.id)
+          {c.phases.map((phase) => {
+            const pts = c.tracks.filter((t) => t.phase === phase.id)
             return (
               <div key={phase.id}>
                 <div className="placard mb-1.5" style={{ color: phase.color }}>
@@ -87,7 +130,7 @@ export function Layout() {
                 </div>
                 <ul className="space-y-0.5">
                   {pts.map((t) => {
-                    const frac = fractionDone(trackItemIds.get(t.id) ?? [], checks)
+                    const frac = fractionDone(c.trackItemIds.get(t.id) ?? [], checks)
                     return (
                       <li key={t.id}>
                         <NavLink
@@ -130,7 +173,7 @@ export function Layout() {
             <span className="font-display text-sm font-bold text-ink">GROUND SCHOOL</span>
           </NavLink>
           <div className="flex items-center gap-1">
-            {NAV.map(({ to, icon: Icon, end, label }) => (
+            {nav.map(({ to, icon: Icon, end, label }) => (
               <NavLink
                 key={to}
                 to={to}

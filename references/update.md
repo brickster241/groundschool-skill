@@ -13,9 +13,11 @@ deletion.
 
 ### 1. Read the baseline
 
-`src/data/meta.ts` → `baseline: { branch, commit, date }`. Confirm the repo is on that branch
-(if the user wants the dashboard re-pointed at a different branch, that is a re-baseline —
-same protocol, bigger diff).
+Baselines are **per branch**: `src/branches/<branch>/meta.ts` → `baseline: { branch, commit,
+date }`. An update targets ONE branch's curriculum — the one the user is talking about
+(default: the active/checked-out branch). Other branch folders are off-limits during the run.
+If the user instead wants a NEW branch covered, that is a scoped GENERATE (new folder +
+registry entry), not an update.
 
 ### 2. Diff and map
 
@@ -52,7 +54,10 @@ cd <repo> && for p in $(list of anchor paths); do [ -e "$p" ] || echo "MISSING $
 
 ### 5. Re-stamp and record
 
-- `meta.baseline` → current branch @ `git rev-parse --short HEAD`, today's date.
+- The branch's `meta.baseline` → branch @ `git rev-parse --short HEAD`, today's date.
+- Quizzes and flashcards may be freely evolved during an update (they live in central files
+  keyed by trackId, carry no positional IDs, and best-scores survive question changes) —
+  but keep them true to the concept-weighted bar in curriculum.md.
 - `CHANGELOG.md` (inside `groundschool/`): dated entry — commits covered, tracks touched and
   how (drifted/deprecated/appended), anything the user should re-study because it changed.
 - Update `docs/curriculum-plan.md` if the track table changed.

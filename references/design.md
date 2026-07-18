@@ -40,16 +40,34 @@ Texture: a barely-there blueprint grid on the body. No gradients, no glows, no s
 - **Progress ring** (`ProgressRing`): phase-colored, spring-animated.
 - **The schematic** (`PipelineSchematic`): the one signature element — spine with a flowing
   amber pulse, stage nodes in phase colors. One per app, on the dashboard only.
-- **Deprecation banner**: warn-colored archive placard — the only sanctioned use of `warn`
-  outside destructive confirmation.
+- **Checkride** (`Checkride`): the per-track exam — hud-blue framing (assessment, not
+  progress), mono option letters, ok/warn feedback states, best score in the header.
+- **Flash deck** (`FlashDeck`): 3D flip cards (spring rotateY, stacked-deck peek behind,
+  progress dots, ←/→/space keys). Front face hud-labeled PROMPT, back face amber ANSWER.
+  Lives on track pages and the Revision page; ephemeral by design.
+- **Branch switcher** (in `Layout`): mono branch chips with a spring `layoutId` pill;
+  appears only when the registry has more than one branch.
+- **Deprecation banner**: warn-colored archive placard — `warn` appears only here, in
+  destructive confirmation, and in wrong Checkride answers.
 
-## Motion rules
+## Motion rules — and the animation-library policy
 
-Motion is `motion/react` springs and short fades: entrance staggers ≤ 0.06s/item, one-shot,
-never looping (exception: the schematic's pulse, which is the identity's single ambient
-animation). Everything respects `prefers-reduced-motion` (CSS handles the pulse; keep new
-motion behind the same discipline). If an addition needs a second ambient animation, it is
-probably wrong.
+Two libraries, two jobs, deliberately:
+
+- **`motion/react`** owns *structural* animation: entrances, layout, springs, presence
+  (AnimatePresence). Anything that moves an element moves via motion.
+- **`anime.js` (v4)** owns *numeric/timeline* flourishes: the `CountUp` stat counters are
+  the canonical use. Reach for it when animating a **value** rather than an element; keep
+  each use wrapped in a small component (like `CountUp`) so the seam stays visible.
+- **Do not add component-collection libraries (reactbits and kin).** Pre-styled components
+  arrive carrying their own design opinions and fight the token system; this shell's
+  identity comes from tokens + typography, and every element must be built in them.
+
+Rules for either library: entrance staggers ≤ 0.06s/item, one-shot, never looping
+(exception: the schematic's pulse, the identity's single ambient animation). Everything
+respects `prefers-reduced-motion` (CSS handles the pulse; `CountUp` checks the media query;
+keep new motion behind the same discipline). If an addition needs a second ambient
+animation, it is probably wrong.
 
 ## The per-repo surface (all of it lives in `src/data/`)
 

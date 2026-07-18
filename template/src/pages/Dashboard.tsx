@@ -1,71 +1,55 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
 import { ArrowRight, MoveRight } from 'lucide-react'
-import {
-  phases,
-  tracks,
-  tracksByPhase,
-  trackBySlug,
-  trackItemIds,
-  totalItems,
-  totalLessons,
-  totalHours,
-  weeks,
-} from '../data/curriculum'
-import { pipeline } from '../data/pipeline'
-import { meta } from '../data/meta'
-import { fractionDone, useProgress } from '../store'
+import { useCurriculum, type Curriculum } from '../curriculum'
+import { fractionDone, useChecks, useLastTrack } from '../store'
+import { CountUp } from '../components/CountUp'
 import { PipelineSchematic } from '../components/PipelineSchematic'
 import { ProgressRing } from '../components/ProgressRing'
 import { inline } from '../components/text'
 
-function useOverall() {
-  const checks = useProgress((s) => s.checks)
-  const done = Object.keys(checks).length
-  return { checks, done, frac: totalItems === 0 ? 0 : done / totalItems }
-}
-
 /** Next incomplete track in curriculum order, or the last visited one if unfinished. */
-function useUpNext() {
-  const checks = useProgress((s) => s.checks)
-  const last = useProgress((s) => s.lastTrack)
-  const lastTrack = last ? trackBySlug.get(last) : undefined
+function upNextFor(c: Curriculum, checks: Record<string, number>, last: string | null) {
+  const lastTrack = last ? c.trackBySlug.get(last) : undefined
   if (lastTrack) {
-    const ids = trackItemIds.get(lastTrack.id) ?? []
-    const frac = fractionDone(ids, checks)
-    if (frac < 1) return { track: lastTrack, frac, resumed: true }
+    const frac = fractionDone(c.trackItemIds.get(lastTrack.id) ?? [], checks)
+    if (frac < 1) return { track: lastTrack, resumed: true }
   }
-  for (const t of tracks) {
-    const frac = fractionDone(trackItemIds.get(t.id) ?? [], checks)
-    if (frac < 1) return { track: t, frac, resumed: false }
+  for (const t of c.tracks) {
+    const frac = fractionDone(c.trackItemIds.get(t.id) ?? [], checks)
+    if (frac < 1) return { track: t, resumed: false }
   }
-  return { track: tracks[tracks.length - 1], frac: 1, resumed: false }
+  return { track: c.tracks[c.tracks.length - 1], resumed: false }
 }
 
 export function Dashboard() {
-  const { checks, done, frac } = useOverall()
-  const upNext = useUpNext()
-  const hasPipeline = pipeline.length > 0
+  const c = useCurriculum()
+  const checks = useChecks()
+  const last = useLastTrack()
+  const done = Object.keys(checks).length
+  const frac = c.totalItems === 0 ? 0 : done / c.totalItems
+  const upNext = upNextFor(c, checks, last)
+  const hasPipeline = c.pipeline.length > 0
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-8 md:py-12">
+    <div className="mx-auto max-w-5xl px-5 py-8 md:py-12" key={c.branch}>
       {/* hero */}
       <motion.header
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <p className="placard">{meta.eyebrow}</p>
+        <p className="placard">{c.meta.eyebrow}</p>
         <h1 className="mt-2 font-display text-4xl leading-none font-bold tracking-tight text-ink md:text-5xl">
-          {meta.repoName} <span className="text-amber">GROUND SCHOOL</span>
+          {c.meta.repoName} <span className="text-amber">GROUND SCHOOL</span>
         </h1>
-        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{inline(meta.intro)}</p>
+        <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{inline(c.meta.intro)}</p>
         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-wider text-faint">
-          <span><b className="text-ink">{tracks.length}</b> TRACKS</span>
-          <span><b className="text-ink">{totalLessons}</b> LESSONS</span>
-          <span><b className="text-ink">{totalItems}</b> CHECKLIST ITEMS</span>
-          <span><b className="text-ink">{totalHours[0]}–{totalHours[1]}</b> HRS EST</span>
-          {meta.statusChips.map((chip) => (
+          <span><CountUp value={c.tracks.length} className="text-ink" /> TRACKS</span>
+          <span><CountUp value={c.totalLessons} className="text-ink" /> LESSONS</span>
+          <span><CountUp value={c.totalItems} className="text-ink" /> CHECKLIST ITEMS</span>
+          <span><b className="text-ink">{c.totalHours[0]}–{c.totalHours[1]}</b> HRS EST</span>
+          {c.meta.statusChips.map((chip) => (
             <span key={chip} className="text-ok">{chip}</span>
           ))}
         </div>
@@ -94,8 +78,8 @@ export function Dashboard() {
         <div className="flex items-center gap-4 rounded-xl border border-line bg-panel px-5 py-4">
           <ProgressRing fraction={frac} size={64} stroke={5} />
           <div className="font-mono text-[11px] leading-relaxed tracking-wider text-dim">
-            <div><b className="text-ink">{done}</b> / {totalItems} DONE</div>
-            <div className="text-faint">ALL TRACKS</div>
+            <div><b className="text-ink">{done}</b> / {c.totalItems} DONE</div>
+            <div className="text-faint">BRANCH {c.branch.toUpperCase()}</div>
           </div>
         </div>
       </motion.section>
@@ -119,9 +103,9 @@ export function Dashboard() {
           className="space-y-3"
         >
           <div className="placard">Phases</div>
-          {phases.map((phase) => {
-            const pts = tracksByPhase(phase.id)
-            const ids = pts.flatMap((t) => trackItemIds.get(t.id) ?? [])
+          {c.phases.map((phase) => {
+            const pts = c.tracks.filter((t) => t.phase === phase.id)
+            const ids = pts.flatMap((t) => c.trackItemIds.get(t.id) ?? [])
             const pfrac = fractionDone(ids, checks)
             return (
               <Link
@@ -140,12 +124,12 @@ export function Dashboard() {
               </Link>
             )
           })}
-          {weeks.length > 0 && (
+          {c.weeks.length > 0 && (
             <Link
               to="/planner"
               className="flex items-center justify-between rounded-xl border border-dashed border-line px-4 py-3 text-sm text-dim transition-colors hover:border-hud/50 hover:text-ink"
             >
-              Prefer a schedule? The {weeks.length}-week plan
+              Prefer a schedule? The {c.weeks.length}-week plan
               <MoveRight className="h-4 w-4" />
             </Link>
           )}
@@ -153,7 +137,7 @@ export function Dashboard() {
       </section>
 
       <footer className="mt-12 border-t border-line pt-4 text-center font-mono text-[10px] tracking-wider text-faint">
-        {meta.motto}
+        {c.meta.motto}
       </footer>
     </div>
   )

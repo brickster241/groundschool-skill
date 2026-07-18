@@ -1,27 +1,28 @@
 import { Link } from 'react-router-dom'
 import { NotebookPen } from 'lucide-react'
-import { tracks } from '../data/curriculum'
-import { useProgress } from '../store'
+import { useCurriculum } from '../curriculum'
+import { useNotes } from '../store'
 import { NotesEditor } from '../components/NotesEditor'
 
 export function NotesPage() {
-  const notes = useProgress((s) => s.notes)
-  const withNotes = tracks.filter((t) => (notes[t.id] ?? '').trim().length > 0)
+  const c = useCurriculum()
+  const notes = useNotes()
+  const withNotes = c.tracks.filter((t) => (notes[t.id] ?? '').trim().length > 0)
   const plannerNote = (notes['planner'] ?? '').trim().length > 0
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-8 md:py-12">
-      <p className="placard">Everything you wrote</p>
+    <div className="mx-auto max-w-3xl px-5 py-8 md:py-12" key={c.branch}>
+      <p className="placard">Everything you wrote · {c.branch}</p>
       <h1 className="mt-2 font-display text-3xl font-bold text-ink">Field notes</h1>
       <p className="mt-2 text-sm text-dim">
-        One notebook per track, all local, all markdown. Empty ones are hidden — write in a track page
-        or the planner and it appears here.
+        One notebook per track, all local, all markdown, kept per branch. Empty ones are hidden —
+        write in a track page or the planner and it appears here.
       </p>
 
       {withNotes.length === 0 && !plannerNote ? (
         <div className="mt-10 flex flex-col items-center gap-3 rounded-xl border border-dashed border-line py-14 text-center">
           <NotebookPen className="h-6 w-6 text-faint" />
-          <p className="text-sm text-dim">No notes yet.</p>
+          <p className="text-sm text-dim">No notes yet on this branch.</p>
           <p className="max-w-sm text-xs leading-relaxed text-faint">
             The fastest way to find your blind spots: before reading any file, write one sentence
             predicting what it does — then check.

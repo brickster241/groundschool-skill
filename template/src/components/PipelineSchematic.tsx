@@ -1,24 +1,23 @@
 import { Link } from 'react-router-dom'
 import { motion } from 'motion/react'
-import { pipeline } from '../data/pipeline'
-import { meta } from '../data/meta'
-import { trackBySlug, trackItemIds, phaseById } from '../data/curriculum'
-import { fractionDone, useProgress } from '../store'
+import { useCurriculum } from '../curriculum'
+import { fractionDone, useChecks } from '../store'
 
 /**
  * The signature element: the repo's system map as a living schematic.
  * Flow pulses down the spine; each stage is a real file and links into
- * its track. Renders nothing when no pipeline is authored.
+ * its track. Renders nothing when the branch has no pipeline authored.
  */
 export function PipelineSchematic() {
-  const checks = useProgress((s) => s.checks)
-  if (pipeline.length === 0) return null
+  const c = useCurriculum()
+  const checks = useChecks()
+  if (c.pipeline.length === 0) return null
 
   return (
     <div className="relative rounded-xl border border-line bg-panel p-5">
       <div className="mb-4 flex items-baseline justify-between">
-        <span className="placard">{meta.systemMapTitle}</span>
-        <span className="font-mono text-[10px] text-faint">{meta.systemMapFlow}</span>
+        <span className="placard">{c.meta.systemMapTitle}</span>
+        <span className="font-mono text-[10px] text-faint">{c.meta.systemMapFlow}</span>
       </div>
 
       <div className="relative">
@@ -29,11 +28,11 @@ export function PipelineSchematic() {
         </svg>
 
         <ol className="space-y-1.5">
-          {pipeline.map((stage, i) => {
-            const track = trackBySlug.get(stage.trackSlug)
-            const ids = track ? (trackItemIds.get(track.id) ?? []) : []
+          {c.pipeline.map((stage, i) => {
+            const track = c.trackBySlug.get(stage.trackSlug)
+            const ids = track ? (c.trackItemIds.get(track.id) ?? []) : []
             const frac = fractionDone(ids, checks)
-            const color = track ? phaseById.get(track.phase)?.color : '#8b98a9'
+            const color = track ? c.phaseById.get(track.phase)?.color : '#8b98a9'
             return (
               <motion.li
                 key={stage.id}

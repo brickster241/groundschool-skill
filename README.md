@@ -40,6 +40,10 @@ cd template && npm install && npm run build   # must always pass
 ```
 
 The example curriculum inside it demonstrates every authoring feature: inline formatting,
-all six checklist kinds, quiz answers on expand, click-to-load YouTube embeds, editor
-deep-links (`vscode://` / `cursor://` / `zed://`, with line numbers), deprecation banners,
-the animated system map, and the optional study plan.
+all six checklist kinds, quiz answers on expand, **Checkride** exams (per-track multiple
+choice with explanations and persisted best scores, authored centrally in
+`src/data/quizzes.ts`), click-to-load YouTube embeds, editor deep-links
+(`vscode://` / `cursor://` / `zed://`, with line numbers — they open the file in your
+running editor instance), deprecation banners, the animated system map (motion for
+structure, anime.js for numeric flourishes like the stat count-ups), and the optional
+study plan.

@@ -1,63 +1,99 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { meta } from './data/meta'
+import { defaultBranch, storeKey } from './branches'
 
-interface ProgressState {
+/** Per-branch progress: everything a learner accumulates on one branch. */
+interface Slice {
   /** itemId -> completion timestamp (ms) */
   checks: Record<string, number>
   /** noteKey (trackId or 'planner') -> markdown */
   notes: Record<string, string>
+  /** trackId -> best Checkride score (correct count) */
+  quizBest: Record<string, number>
   /** last visited track slug, for the resume card */
   lastTrack: string | null
+}
+
+const emptySlice = (): Slice => ({ checks: {}, notes: {}, quizBest: {}, lastTrack: null })
+
+interface ProgressState {
+  /** active branch name (a key of the branch registry) */
+  branch: string
+  slices: Record<string, Slice>
+  setBranch: (branch: string) => void
   toggle: (id: string) => void
   setNote: (key: string, md: string) => void
+  recordQuiz: (trackId: string, score: number) => void
   setLastTrack: (slug: string) => void
   importState: (json: string) => boolean
-  resetAll: () => void
+  resetBranch: () => void
+}
+
+/** Immutably update the ACTIVE branch's slice. */
+function mutate(s: ProgressState, fn: (slice: Slice) => Partial<Slice>) {
+  const cur = s.slices[s.branch] ?? emptySlice()
+  return { slices: { ...s.slices, [s.branch]: { ...cur, ...fn(cur) } } }
 }
 
 export const useProgress = create<ProgressState>()(
   persist(
     (set) => ({
-      checks: {},
-      notes: {},
-      lastTrack: null,
+      branch: defaultBranch,
+      slices: {},
+      setBranch: (branch) => set({ branch }),
       toggle: (id) =>
-        set((s) => {
-          const checks = { ...s.checks }
-          if (checks[id]) delete checks[id]
-          else checks[id] = Date.now()
-          return { checks }
-        }),
+        set((s) =>
+          mutate(s, (sl) => {
+            const checks = { ...sl.checks }
+            if (checks[id]) delete checks[id]
+            else checks[id] = Date.now()
+            return { checks }
+          }),
+        ),
       setNote: (key, md) =>
-        set((s) => ({ notes: { ...s.notes, [key]: md } })),
-      setLastTrack: (slug) => set({ lastTrack: slug }),
+        set((s) => mutate(s, (sl) => ({ notes: { ...sl.notes, [key]: md } }))),
+      recordQuiz: (trackId, score) =>
+        set((s) =>
+          mutate(s, (sl) => ({
+            quizBest: { ...sl.quizBest, [trackId]: Math.max(sl.quizBest[trackId] ?? 0, score) },
+          })),
+        ),
+      setLastTrack: (slug) => set((s) => mutate(s, () => ({ lastTrack: slug }))),
       importState: (json) => {
         try {
           const data = JSON.parse(json)
           if (typeof data !== 'object' || data === null) return false
-          if (typeof data.checks !== 'object' || typeof data.notes !== 'object')
-            return false
-          set({
-            checks: data.checks ?? {},
-            notes: data.notes ?? {},
-            lastTrack: data.lastTrack ?? null,
-          })
+          if (typeof data.slices !== 'object' || data.slices === null) return false
+          set({ slices: data.slices, branch: data.branch ?? defaultBranch })
           return true
         } catch {
           return false
         }
       },
-      resetAll: () => set({ checks: {}, notes: {}, lastTrack: null }),
+      resetBranch: () =>
+        set((s) => ({ slices: { ...s.slices, [s.branch]: emptySlice() } })),
     }),
-    { name: meta.storageKey },
+    { name: storeKey },
   ),
 )
 
+/* Stable empty references so selectors don't churn renders. */
+const EMPTY_NUM: Record<string, number> = {}
+const EMPTY_STR: Record<string, string> = {}
+
+export const useChecks = () =>
+  useProgress((s) => s.slices[s.branch]?.checks ?? EMPTY_NUM)
+export const useNotes = () =>
+  useProgress((s) => s.slices[s.branch]?.notes ?? EMPTY_STR)
+export const useQuizBest = () =>
+  useProgress((s) => s.slices[s.branch]?.quizBest ?? EMPTY_NUM)
+export const useLastTrack = () =>
+  useProgress((s) => s.slices[s.branch]?.lastTrack ?? null)
+
 export function exportState(): string {
-  const { checks, notes, lastTrack } = useProgress.getState()
+  const { branch, slices } = useProgress.getState()
   return JSON.stringify(
-    { version: 1, exported: new Date().toISOString(), checks, notes, lastTrack },
+    { version: 3, exported: new Date().toISOString(), branch, slices },
     null,
     2,
   )

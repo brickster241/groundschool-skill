@@ -1,4 +1,4 @@
-import type { GlossaryTerm } from './types'
+import type { GlossaryTerm } from '../../data/types'
 
 /**
  * EXAMPLE — replace with the repo's real vocabulary (aim for 40–80 terms).

@@ -1,24 +1,28 @@
 # Ground School (template)
 
-This directory is the **app template** bundled with the groundschool skill. It builds and runs
-as-is with a one-track example curriculum so the shell can be verified independently — but its
-purpose is to be instantiated: copied into `<target-repo>/groundschool/`, with `src/data/`
-replaced by a real, repo-specific curriculum and `src/data/meta.ts` filled in.
-
-When instantiating, this README is replaced by a repo-specific one (see the skill's SKILL.md).
+The **app template** bundled with the groundschool skill. It builds and runs as-is with a
+two-branch example curriculum (`main` + `sandbox`) so the whole shell — including the branch
+switcher — can be verified independently. Its purpose is to be instantiated: copied into
+`<target-repo>/groundschool/`, example branches replaced by real ones.
 
 ```bash
 npm install
-npm run dev       # develop / study
-npm run build     # static build in dist/ — fully offline except opted-in video embeds
+npm run dev       # binds --host: reachable from other devices on your LAN
+npm run build     # static build in dist/ — offline except opted-in video embeds
 ```
 
-Layout worth knowing:
+## Layout
 
-- `src/data/meta.ts` — ALL repo-specific branding/config (name, paths, storage key, editor
-  deep-link scheme, curriculum baseline commit). The shell reads nothing else.
-- `src/data/tracks/*.ts` — one file per track. Checklist IDs derive from position:
-  **append, never reorder or delete** (saved progress is keyed on them). Deprecate instead.
-- `src/data/{pipeline,planner,glossary}.ts` — the system map, optional study plan (empty array
-  hides the page), and vocabulary.
-- `src/components/`, `src/pages/` — the generic shell. Instantiations normally do not edit it.
+- `src/branches/<branch>/` — one folder per git branch: `meta.ts` (branding/config/baseline),
+  `tracks/*.ts`, `pipeline.ts`, `glossary.ts`, `planner.ts` (empty array hides the page),
+  `quizzes.ts` (Checkrides, optional per track), `flashcards.ts` (revision decks), and an
+  `index.ts` exporting the `BranchBundle` (with the phase list).
+- `src/branches/index.ts` — the registry: branch map, `defaultBranch`, and the repo-level
+  `storeKey`. More than one entry → the sidebar branch switcher appears; progress, notes,
+  and scores are kept per branch under the one storage key.
+- `src/curriculum.ts` — assembles every bundle at load; `useCurriculum()` is the single data
+  hook all views consume. Checklist IDs derive from position (`t03.1.2`): **append, never
+  reorder or delete** — deprecate instead. Quizzes/flashcards are keyed by trackId and may
+  evolve freely.
+- `src/components/`, `src/pages/` — the shared shell. Instantiations normally do not edit it.
+  Animation policy: motion for structure, anime.js for numeric flourishes (`CountUp`).

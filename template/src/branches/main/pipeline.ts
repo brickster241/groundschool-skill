@@ -1,4 +1,4 @@
-import type { PipelineStage } from './types'
+import type { PipelineStage } from '../../data/types'
 
 /**
  * The system map: the ONE mental model of the repo as an ordered flow,

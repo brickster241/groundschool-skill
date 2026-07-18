@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { marked } from 'marked'
 import DOMPurify from 'dompurify'
 import { Eye, PenLine } from 'lucide-react'
-import { useProgress } from '../store'
+import { useNotes, useProgress } from '../store'
 
 marked.setOptions({ gfm: true, breaks: true })
 
 export function NotesEditor({ noteKey, placeholder }: { noteKey: string; placeholder?: string }) {
-  const value = useProgress((s) => s.notes[noteKey] ?? '')
+  const value = useNotes()[noteKey] ?? ''
   const setNote = useProgress((s) => s.setNote)
   const [preview, setPreview] = useState(false)
 

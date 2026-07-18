@@ -80,6 +80,35 @@ worth pacing (run-it-first week 1, spine weeks in the middle, beyond-the-repo la
 `[]` to hide the page entirely. Week items reference the tracks (`trackIds`) but carry their
 own short checklist.
 
+**quizzes.ts** — the Checkrides: `Record<trackId, QuizQuestion[]>`, the single authoring
+location (never inline on tracks; the assembler attaches them, and UPDATE can evolve quizzes
+without touching track files). Quizzes are **optional per track** and **concept-weighted,
+not flat**: a bedrock concept that must not be learnt lightly (frames, the control cascade,
+the offboard contract, safety-critical hardware knowledge) earns 7–10+ questions; a bridging
+track earns 3–4 or none. Weight by importance, not by track size.
+
+- Test the *concept*, not recall — a question answerable by grepping belongs in a `read` item.
+- Every distractor is a **real misconception** a partial understanding would pick (the NED
+  classic: "climb to 30 m means D = +30"). Filler options teach nothing and flatter scores.
+- `explain` teaches why the right answer is right — it is read most often after a *miss*,
+  so write it for the person who just picked the misconception.
+- Best scores persist per track; retakes only improve the record, so hard questions are fine.
+- A track without an entry shows no Checkride — better none than trivia.
+
+**flashcards.ts** — the revision decks: `Record<trackId, Flashcard[]>`, same central-file
+rule as quizzes. Flashcards are the quick-revision layer (the Revision page aggregates every
+deck plus an auto-built glossary deck; track pages show their own deck) — author them for
+**every substantial track**:
+
+- Front = ONE prompt: a question, a term, a scenario ("GPS dies mid-flight — what does the
+  estimate do?"). If the front needs two sentences, it is two cards.
+- Back = the crisp answer you want producible from memory, three sentences max.
+- Deck depth is concept-weighted like quizzes: deep decks for bedrock concepts, a few cards
+  for bridging material. Formulas, sign conventions, failure chains, and "what does X stand
+  for + why it matters" all make excellent cards.
+- Don't duplicate the glossary — its deck is auto-generated. Track cards should test
+  *relationships and behavior*, not term definitions.
+
 **meta.ts** — every field, from the plan doc's aesthetic notes. `motto` is three short mono
 clauses that capture the repo's philosophy (the AMOS original: "SIMULATION-FIRST · HARDWARE
 WHEN IT IS THE ONLY THING LEFT · NED EVERYWHERE"). `statusChips` only for real, earned claims

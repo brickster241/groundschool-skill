@@ -27,11 +27,14 @@ Work through these stages in order. Do not skip a gate.
 ### 1. Target and branch gate
 
 - Confirm the target repo path. If the conversation doesn't pin it down, ask.
-- `git branch -a` in the target. If more than one plausible branch exists (e.g. `main` plus an
-  active `develop`/feature branch), ask the user which branch the curriculum should teach
-  (AskUserQuestion; recommend the currently checked-out branch). One dashboard covers one
-  branch — record the choice, it becomes `meta.baseline.branch`.
-- If the chosen branch is not checked out, analyze it via `git worktree add` to a temp dir
+- **Default to the currently checked-out branch — do not ask.** Ask only when the user names
+  a different branch, HEAD is detached, or they ask for several branches.
+- Branch curricula **coexist**: content lives at `groundschool/src/branches/<branch>/` (one
+  folder per branch, registered in `src/branches/index.ts`), one dev server serves them all,
+  a sidebar switcher flips between them, and progress/notes are kept per branch. Adding a
+  branch to an existing dashboard = author a new branch folder + registry entry — never touch
+  other branches' folders.
+- If a requested branch is not checked out, analyze it via `git worktree add` to a temp dir
   rather than disturbing the user's working tree; remove the worktree when done.
 
 ### 2. Analyze the repo → curriculum plan
@@ -60,18 +63,24 @@ cd "<repo>/groundschool" && npm install
 
 Then make it the repo's own:
 
-- Fill in every field of `src/data/meta.ts` (see the `Meta` type's doc comments — they are
-  the spec). `storageKey` must be `groundschool-<repo>-v1`. Stamp `baseline` from
-  `git rev-parse --short HEAD` + branch + today's date.
+- Delete the example branch folders (`src/branches/main/`, `src/branches/sandbox/`) and
+  create `src/branches/<branch>/` for the target branch. Register it in
+  `src/branches/index.ts`: the bundle entry, `defaultBranch`, and `storeKey`
+  (`groundschool-<repo>-v2`, unique per repo).
+- Fill in every field of the branch's `meta.ts` (the `Meta` type's doc comments are the
+  spec). Stamp `baseline` from `git rev-parse --short HEAD` + branch + today's date.
 - Set `<title>` in `index.html` to "<Repo> Ground School".
-- Replace `README.md` with a repo-specific one (what this dashboard is, how to run it,
-  the append-only editing rule, where the data files live).
+- Replace `README.md` with a repo-specific one (what this dashboard is, how to run it —
+  the dev server binds `--host`, so it is reachable from other devices on the LAN —
+  the append-only editing rule, and the branch-folder layout).
 
 ### 4. Author the curriculum
 
 Follow `references/curriculum.md` — it is the quality bar, the voice, and the per-field spec.
-Replace `src/data/tracks/` (the example file shows every supported feature), `pipeline.ts`,
-`glossary.ts`, `planner.ts`, and the phases/imports in `curriculum.ts`.
+Author into `src/branches/<branch>/`: `tracks/` (the example track shows every supported
+feature), `pipeline.ts`, `glossary.ts`, `planner.ts` (optional), `flashcards.ts` (per-concept
+revision decks — author these for every substantial track), `quizzes.ts` (Checkrides —
+optional per track, concept-weighted), and the phases/imports in the branch's `index.ts`.
 
 Design decisions for any UI you touch (normally none) come from `references/design.md`.
 

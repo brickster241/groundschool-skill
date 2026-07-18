@@ -14,27 +14,28 @@ import {
   SquareArrowOutUpRight,
   Telescope,
 } from 'lucide-react'
-import { phaseById, trackBySlug, tracks, trackItemIds } from '../data/curriculum'
-import { meta } from '../data/meta'
-import type { CodeAnchor, Resource } from '../data/types'
-import { fractionDone, useProgress } from '../store'
+import { useCurriculum } from '../curriculum'
+import type { CodeAnchor, Meta, Resource } from '../data/types'
+import { fractionDone, useChecks, useProgress } from '../store'
+import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
+import { FlashDeck } from '../components/FlashDeck'
 import { NotesEditor } from '../components/NotesEditor'
 import { ProgressRing } from '../components/ProgressRing'
 import { VideoEmbed } from '../components/VideoEmbed'
 import { Copy, inline } from '../components/text'
 
 /** vscode://file/abs/path:line — cursor and zed use the same scheme shape. */
-function editorHref(anchor: CodeAnchor): string | null {
+function editorHref(meta: Meta, anchor: CodeAnchor): string | null {
   if (!meta.editor) return null
   const abs = `${meta.repoPathAbs}/${anchor.path}`
   const line = anchor.line ? `:${anchor.line}` : ''
   return `${meta.editor}://file${abs}${line}`
 }
 
-function AnchorRow({ anchor }: { anchor: CodeAnchor }) {
+function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
   const [copied, setCopied] = useState(false)
-  const href = editorHref(anchor)
+  const href = editorHref(meta, anchor)
   return (
     <li className="flex items-start gap-2 py-1.5">
       <FileCode2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-hud/70" />
@@ -117,10 +118,11 @@ function DeprecatedBanner({ note }: { note?: string }) {
 }
 
 export function TrackPage() {
+  const c = useCurriculum()
   const { slug } = useParams()
   const { hash } = useLocation()
-  const track = slug ? trackBySlug.get(slug) : undefined
-  const checks = useProgress((s) => s.checks)
+  const track = slug ? c.trackBySlug.get(slug) : undefined
+  const checks = useChecks()
   const setLastTrack = useProgress((s) => s.setLastTrack)
 
   useEffect(() => {
@@ -136,12 +138,12 @@ export function TrackPage() {
 
   if (!track) return <Navigate to="/tracks" replace />
 
-  const phase = phaseById.get(track.phase)!
-  const ids = trackItemIds.get(track.id) ?? []
+  const phase = c.phaseById.get(track.phase)!
+  const ids = c.trackItemIds.get(track.id) ?? []
   const frac = fractionDone(ids, checks)
-  const idx = tracks.findIndex((t) => t.id === track.id)
-  const prev = idx > 0 ? tracks[idx - 1] : undefined
-  const next = idx < tracks.length - 1 ? tracks[idx + 1] : undefined
+  const idx = c.tracks.findIndex((t) => t.id === track.id)
+  const prev = idx > 0 ? c.tracks[idx - 1] : undefined
+  const next = idx < c.tracks.length - 1 ? c.tracks[idx + 1] : undefined
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 md:py-10">
@@ -175,7 +177,7 @@ export function TrackPage() {
                 <span>
                   AFTER{' '}
                   {track.dependsOn.map((d, i) => {
-                    const dep = tracks.find((t) => t.id === d)
+                    const dep = c.trackById.get(d)
                     return (
                       <span key={d}>
                         {i > 0 && ' '}
@@ -292,6 +294,21 @@ export function TrackPage() {
             </ul>
           </section>
 
+          {/* flash deck */}
+          {track.cards && track.cards.length > 0 && (
+            <section>
+              <FlashDeck
+                cards={track.cards}
+                deckLabel={`Flash deck — ${track.cards.length} cards`}
+              />
+            </section>
+          )}
+
+          {/* checkride */}
+          {track.quiz && track.quiz.length > 0 && (
+            <Checkride trackId={track.id} questions={track.quiz} />
+          )}
+
           {/* notes */}
           <NotesEditor
             noteKey={track.id}
@@ -335,7 +352,7 @@ export function TrackPage() {
             <h2 className="placard mb-2">Code anchors</h2>
             <ul className="divide-y divide-line/50">
               {track.anchors.map((a) => (
-                <AnchorRow key={a.path} anchor={a} />
+                <AnchorRow key={a.path} meta={c.meta} anchor={a} />
               ))}
             </ul>
           </div>

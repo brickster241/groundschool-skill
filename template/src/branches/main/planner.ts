@@ -1,4 +1,4 @@
-import type { WeekPlanDraft } from './types'
+import type { WeekPlanDraft } from '../../data/types'
 
 /**
  * OPTIONAL study schedule. Leave the array EMPTY to hide the planner

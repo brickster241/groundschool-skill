@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { motion } from 'motion/react'
 import { ChevronDown } from 'lucide-react'
 import type { ChecklistItem } from '../data/types'
-import { useProgress } from '../store'
+import { useChecks, useProgress } from '../store'
 import { inline } from './text'
 
 const KIND_STYLE: Record<ChecklistItem['kind'], { label: string; cls: string }> = {
@@ -15,7 +15,7 @@ const KIND_STYLE: Record<ChecklistItem['kind'], { label: string; cls: string }> 
 }
 
 export function CheckRow({ item, index }: { item: ChecklistItem; index: string }) {
-  const done = useProgress((s) => Boolean(s.checks[item.id]))
+  const done = Boolean(useChecks()[item.id])
   const toggle = useProgress((s) => s.toggle)
   const [open, setOpen] = useState(false)
   const kind = KIND_STYLE[item.kind]

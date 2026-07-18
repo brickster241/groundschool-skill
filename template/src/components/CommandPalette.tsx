@@ -2,8 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search } from 'lucide-react'
-import { tracks } from '../data/curriculum'
-import { glossary } from '../data/glossary'
+import { useCurriculum } from '../curriculum'
 
 interface Hit {
   kind: 'track' | 'lesson' | 'term'
@@ -12,42 +11,48 @@ interface Hit {
   to: string
 }
 
-const INDEX: Hit[] = [
-  ...tracks.map((t): Hit => ({
-    kind: 'track',
-    title: `T${String(t.num).padStart(2, '0')} — ${t.title}`,
-    sub: t.tagline,
-    to: `/track/${t.slug}`,
-  })),
-  ...tracks.flatMap((t) =>
-    t.lessons.map((l): Hit => ({
-      kind: 'lesson',
-      title: l.title,
-      sub: `T${String(t.num).padStart(2, '0')} · ${t.title}`,
-      to: `/track/${t.slug}#${l.id}`,
-    })),
-  ),
-  ...glossary.map((g): Hit => ({
-    kind: 'term',
-    title: g.term,
-    sub: g.def,
-    to: '/glossary',
-  })),
-]
-
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const c = useCurriculum()
   const [q, setQ] = useState('')
   const [sel, setSel] = useState(0)
   const nav = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
 
+  const index = useMemo<Hit[]>(
+    () => [
+      ...c.tracks.map((t): Hit => ({
+        kind: 'track',
+        title: `T${String(t.num).padStart(2, '0')} — ${t.title}`,
+        sub: t.tagline,
+        to: `/track/${t.slug}`,
+      })),
+      ...c.tracks.flatMap((t) =>
+        t.lessons.map((l): Hit => ({
+          kind: 'lesson',
+          title: l.title,
+          sub: `T${String(t.num).padStart(2, '0')} · ${t.title}`,
+          to: `/track/${t.slug}#${l.id}`,
+        })),
+      ),
+      ...c.glossary.map((g): Hit => ({
+        kind: 'term',
+        title: g.term,
+        sub: g.def,
+        to: '/glossary',
+      })),
+    ],
+    [c],
+  )
+
   const hits = useMemo(() => {
     const query = q.trim().toLowerCase()
-    if (!query) return INDEX.filter((h) => h.kind === 'track')
-    return INDEX.filter(
-      (h) => h.title.toLowerCase().includes(query) || h.sub.toLowerCase().includes(query),
-    ).slice(0, 12)
-  }, [q])
+    if (!query) return index.filter((h) => h.kind === 'track')
+    return index
+      .filter(
+        (h) => h.title.toLowerCase().includes(query) || h.sub.toLowerCase().includes(query),
+      )
+      .slice(0, 12)
+  }, [q, index])
 
   useEffect(() => {
     if (open) {

@@ -52,6 +52,23 @@ export interface CodeAnchor {
   line?: number
 }
 
+/** One revision flashcard: a prompt on the front, a crisp answer on the back. */
+export interface Flashcard {
+  front: string
+  back: string
+}
+
+/** One Checkride question. Distractors should be real misconceptions, not filler. */
+export interface QuizQuestion {
+  prompt: string
+  /** 2–4 options. Mono letters A–D are added by the UI. */
+  options: string[]
+  /** Index into options. */
+  answer: number
+  /** Shown after answering — teaches WHY, not just which. */
+  explain: string
+}
+
 export interface Track {
   id: string // 't00'
   num: number
@@ -69,12 +86,16 @@ export interface Track {
   proveIt: string[]
   dependsOn: string[]
   resources: Resource[]
+  /** Attached at assemble time from the branch's quizzes map — do not author on drafts. */
+  quiz?: QuizQuestion[]
+  /** Attached at assemble time from the branch's flashcards map — do not author on drafts. */
+  cards?: Flashcard[]
   /** Set by the UPDATE protocol only (see Lesson.status). */
   status?: 'deprecated'
   statusNote?: string
 }
 
-export type TrackDraft = Omit<Track, 'lessons'> & { lessons: LessonDraft[] }
+export type TrackDraft = Omit<Track, 'lessons' | 'quiz' | 'cards'> & { lessons: LessonDraft[] }
 
 export interface Phase {
   id: string
@@ -106,7 +127,19 @@ export interface PipelineStage {
   trackSlug: string
 }
 
-/** Per-repo configuration. The ONLY file the app shell reads branding from. */
+/** Everything one branch's curriculum ships: the shape of `src/branches/<branch>/index.ts`. */
+export interface BranchBundle {
+  meta: Meta
+  phases: Phase[]
+  tracks: TrackDraft[]
+  planner: WeekPlanDraft[]
+  glossary: GlossaryTerm[]
+  pipeline: PipelineStage[]
+  quizzes: Record<string, QuizQuestion[]>
+  flashcards: Record<string, Flashcard[]>
+}
+
+/** Per-branch configuration. The ONLY place the app shell reads branding from. */
 export interface Meta {
   /** Short subject name for the wordmark, e.g. "AMOS". */
   repoName: string
@@ -120,8 +153,6 @@ export interface Meta {
   repoPath: string
   /** Absolute path of the host repo — used for copy-path and editor deep-links. */
   repoPathAbs: string
-  /** localStorage key. MUST be unique per dashboard: "groundschool-<repo>-v1". */
-  storageKey: string
   /** Small mono chips in the hero stats row, e.g. ["SIM VERIFIED 3/3"]. */
   statusChips: string[]
   /** Footer motto — three short clauses that capture the repo's philosophy. */
