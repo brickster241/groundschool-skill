@@ -14,23 +14,33 @@
 export type EmbedKind = 'youtube' | 'pdf' | 'page'
 
 /**
- * Hosts verified (2026-07-31, by response header) to send neither
- * `X-Frame-Options` nor a `frame-ancestors` CSP, so their pages render in a
- * frame. These are the reference sites curricula actually cite.
+ * Hosts measured to send neither `X-Frame-Options` nor a `frame-ancestors`
+ * CSP, so their pages render in a frame. These are the reference sites
+ * curricula actually cite.
  *
- * This list can rot — a site may add framing headers at any time, and there is
- * no way to find out from the browser (see the note on detection below). The
- * cost of a stale entry is one visibly blank panel next to a working
- * open-in-tab link, which is why that link is never conditional.
+ * Last probed 2026-08-09 with `scripts/probe-framing.sh`, which is in the repo
+ * precisely so this list stays falsifiable. Re-run it before trusting a row:
+ * a site can add framing headers any day, and there is no way to find out from
+ * the browser (see the note on detection below).
+ *
+ * Notable absences, all of them measured rather than assumed:
+ * `developer.mozilla.org` sends `X-Frame-Options: DENY`, `pkg.go.dev` sends
+ * `deny`, and both `go.dev` and `datatracker.ietf.org` scope
+ * `frame-ancestors` to themselves. Two of those were on this list until the
+ * probe was written, which is the argument for the probe.
+ *
+ * The cost of a stale entry is one visibly blank panel next to a working
+ * open-in-tab link — which is why that link is never conditional.
  */
 const FRAMEABLE_HOSTS = [
   'www.rfc-editor.org',
   'rfc-editor.org',
-  'datatracker.ietf.org',
   'git-scm.com',
   'en.wikipedia.org',
   'man7.org',
-  'pkg.go.dev',
+  'docs.python.org',
+  'doc.rust-lang.org',
+  'www.kernel.org',
 ]
 
 export interface EmbedTarget {

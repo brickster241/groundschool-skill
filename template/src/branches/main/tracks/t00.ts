@@ -90,10 +90,16 @@ export const t00: TrackDraft = {
       note: 'The /abs/ page is rewritten to /pdf/ automatically. Any .pdf URL previews the same way.',
     },
     {
+      label: 'An allow-listed doc host previews as a page',
+      url: 'https://www.rfc-editor.org/rfc/rfc9110.html',
+      kind: 'doc',
+      note: 'Only hosts measured to permit framing preview inline — see scripts/probe-framing.sh.',
+    },
+    {
       label: 'Most other sites refuse framing, so they open in a tab',
       url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429',
       kind: 'doc',
-      note: 'Deliberate: a blocked iframe renders as a blank box, which is worse than an honest link.',
+      note: 'MDN sends X-Frame-Options: DENY. Deliberate: a blocked iframe renders as a blank box, which is worse than an honest link.',
     },
     {
       label: 'A resource without a URL renders as a plain row',
