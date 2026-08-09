@@ -97,7 +97,7 @@ export function Layout() {
 
   return (
     <div className="flex min-h-screen">
-      <aside className="sticky top-0 hidden h-screen w-60 shrink-0 flex-col border-r border-line bg-panel/60 backdrop-blur md:flex">
+      <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-line bg-panel/60 backdrop-blur md:flex">
         <NavLink to="/" className="flex items-center gap-2.5 border-b border-line px-4 py-4">
           <img src="./roundel.svg" alt="" className="h-7 w-7" />
           <span className="min-w-0">

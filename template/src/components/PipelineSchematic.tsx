@@ -61,7 +61,7 @@ export function PipelineSchematic() {
                       className="shrink-0 font-mono text-[10px] tabular-nums"
                       style={{ color: frac > 0 ? color : '#5b6675' }}
                     >
-                      {Math.round(frac * 100)}%
+                      {frac > 0 ? `${Math.round(frac * 100)}%` : '—'}
                     </span>
                   )}
                 </Link>
