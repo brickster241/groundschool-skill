@@ -127,7 +127,7 @@ architecture-heavy track at least one diagram. The bar:
   path"), not what the diagram is.
 
 **meta.ts** — every field, from the plan doc's aesthetic notes. `motto` is three short mono
-clauses that capture the repo's philosophy (the AMOS original: "SIMULATION-FIRST · HARDWARE
+clauses that capture the repo's philosophy (an original: "SIMULATION-FIRST · HARDWARE
 WHEN IT IS THE ONLY THING LEFT · NED EVERYWHERE"). `statusChips` only for real, earned claims
 ("3/3 REPRODUCIBLE", "CI GREEN ON MAIN") — empty array beats decoration.
 

@@ -4,14 +4,17 @@ import type { Resource } from '../data/types'
 import { embedTarget } from '../lib/resourceEmbed'
 
 /**
- * A resource that can be read *here* when the host allows it, and opened out
- * when it doesn't.
+ * A resource row. The label is always the external link — clicking a resource
+ * opens it in a new tab, which is what a reader reaches for most of the time.
+ * When the source *can* be shown in place (an allow-listed host, a PDF, a
+ * video), a small chip beside it offers an inline preview as the opt-in
+ * extra, never the default.
  *
- * Two deliberate behaviours:
- *  - **Click to load.** Nothing is fetched from a third party until the learner
- *    asks, so opening a track page makes no request to YouTube or arXiv.
- *  - **No fake previews.** Sites that refuse framing get a plain external link
- *    rather than an iframe that renders as a blank box (see `resourceEmbed`).
+ * Two deliberate behaviours survive from that choice:
+ *  - **Nothing loads until asked.** No thumbnails, no third-party requests on
+ *    page load — YouTube is contacted only if the preview chip is clicked.
+ *  - **No fake previews.** Sites that refuse framing simply have no chip
+ *    (see `resourceEmbed`), rather than an iframe that renders as a blank box.
  */
 export function ResourceRow({ r }: { r: Resource }) {
   const [open, setOpen] = useState(false)
@@ -28,27 +31,7 @@ export function ResourceRow({ r }: { r: Resource }) {
       <div className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-panel2">
         {badge}
 
-        {/* The label opens the preview when we have one, otherwise it is the external link. */}
-        {embed ? (
-          <button
-            onClick={() => setOpen((o) => !o)}
-            aria-expanded={open}
-            className="flex min-w-0 flex-1 items-center gap-1.5 text-left"
-          >
-            <span className="min-w-0 flex-1 truncate text-[13px] text-ink">{r.label}</span>
-            <span className="flex shrink-0 items-center gap-1 font-mono text-[9px] tracking-wider text-faint">
-              {embed.kind === 'youtube' ? (
-                <Play className="h-2.5 w-2.5" />
-              ) : (
-                <FileText className="h-2.5 w-2.5" />
-              )}
-              {embed.hint}
-              <ChevronDown
-                className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`}
-              />
-            </span>
-          </button>
-        ) : r.url ? (
+        {r.url ? (
           <a
             href={r.url}
             target="_blank"
@@ -62,18 +45,21 @@ export function ResourceRow({ r }: { r: Resource }) {
           <span className="min-w-0 flex-1 text-[13px] text-ink">{r.label}</span>
         )}
 
-        {/* Always offer the way out — an embed is a convenience, never a cage. */}
-        {embed && r.url && (
-          <a
-            href={r.url}
-            target="_blank"
-            rel="noreferrer"
-            title="Open in a new tab"
-            aria-label={`Open ${r.label} in a new tab`}
-            className="shrink-0 text-faint transition-colors hover:text-ink"
+        {embed && (
+          <button
+            onClick={() => setOpen((o) => !o)}
+            aria-expanded={open}
+            title={open ? 'Close inline preview' : 'Preview here without leaving'}
+            className="flex shrink-0 items-center gap-1 rounded border border-line px-1.5 py-0.5 font-mono text-[9px] tracking-wider text-faint transition-colors hover:border-hud/50 hover:text-ink"
           >
-            <ExternalLink className="h-3 w-3" />
-          </a>
+            {embed.kind === 'youtube' ? (
+              <Play className="h-2.5 w-2.5" />
+            ) : (
+              <FileText className="h-2.5 w-2.5" />
+            )}
+            {embed.hint}
+            <ChevronDown className={`h-3 w-3 transition-transform ${open ? 'rotate-180' : ''}`} />
+          </button>
         )}
       </div>
 
@@ -96,7 +82,7 @@ export function ResourceRow({ r }: { r: Resource }) {
           </div>
           <p className="pt-1 font-mono text-[9px] tracking-wider text-faint">
             Embedded from the source. If it stays blank, the site refused framing — use the
-            open-in-tab arrow.
+            link instead.
           </p>
         </div>
       )}

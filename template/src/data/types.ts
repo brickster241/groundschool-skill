@@ -170,15 +170,15 @@ export interface BranchBundle {
 
 /** Per-branch configuration. The ONLY place the app shell reads branding from. */
 export interface Meta {
-  /** Short subject name for the wordmark, e.g. "AMOS". */
+  /** Short subject name for the wordmark, e.g. "MYREPO". */
   repoName: string
-  /** Browser tab / hero title, e.g. "AMOS Ground School". */
+  /** Browser tab / hero title, e.g. "MyRepo Ground School". */
   title: string
   /** Placard line above the hero H1. */
   eyebrow: string
   /** 1–2 sentence hero intro. `code` spans allowed. */
   intro: string
-  /** Display path of the host repo, e.g. "~/Coding/amos". */
+  /** Display path of the host repo, e.g. "~/Coding/myrepo". */
   repoPath: string
   /** Absolute path of the host repo — used for copy-path and editor deep-links. */
   repoPathAbs: string

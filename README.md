@@ -6,10 +6,10 @@ Not a file tour and not a generated README — a curriculum about the **fundamen
 the code**, rendered as a local-first app that lives at `<repo>/groundschool/` and remembers
 where you got to.
 
-![The flight deck of a ground school generated for GitEngine](docs/img/dashboard.png)
+![The flight deck of the template's own ground school](docs/img/dashboard.png)
 
-<sub>A real one: [GitEngine](https://github.com/brickster241/GitEngine), 11 tracks / 26 lessons /
-97 checklist items, generated from the repo itself.</sub>
+<sub>Fully self-hosting: the screenshots on this page are the skill run on **its own repository** —
+five tracks about the template's actual machinery, every code anchor a real file here.</sub>
 
 ---
 
@@ -35,7 +35,7 @@ dashboard, two curricula, a switcher, and separate progress for each.
 <table>
 <tr>
 <td width="50%"><img src="docs/img/revision.png" alt="Flash decks per track and for the glossary"></td>
-<td width="50%"><img src="docs/img/track.png" alt="A track page with mental model, diagram and code anchors"></td>
+<td width="50%"><img src="docs/img/track.png" alt="A track page: mental model, why-this-design, code anchors"></td>
 </tr>
 </table>
 
@@ -158,6 +158,15 @@ Two things genuinely cannot work from another device, and the app says so rather
 quietly: an editor link would open on the phone, not the machine with the repo, and the
 clipboard API needs a secure context. Both fall back to selectable text.
 
+## Platforms
+
+macOS, Linux and Windows. The only platform-sensitive part is the editor bridge, and it is
+handled where it bites: Windows editor CLIs are `.cmd` shims that Node refuses to spawn without
+a shell, so the plugin uses one there — safe precisely because `"` cannot appear in a Windows
+path and the command itself comes from a fixed table. Editor URLs normalise `C:\` paths to the
+`vscode://file/c:/…` form, and JetBrains gets its line number as a separate argument because
+splitting `C:\repo\main.go:12` on `:` is not a thing that can be done.
+
 ## Layout
 
 | Path | What it is |
@@ -183,13 +192,22 @@ cd template && npm install && npm run build
 gets overwritten on the next UPDATE. If the shell needs to change, change the template — a
 fix made in one instance helps one person once.
 
+## Roadmap
+
+- **Animated segments for the genuinely hard topics.** The diagrams are static SVG today;
+  for material where motion carries the idea (consensus rounds, cache line behaviour, merge
+  frontiers), pre-rendered animation clips — Manim or similar — served as local video with the
+  same nothing-loads-until-clicked rule. Rendered at generate time, so readers never need the
+  toolchain.
+- **An anchor linter** that re-verifies every `path`/`line` in a curriculum against the repo,
+  as a single command — today this lives inside the UPDATE protocol only.
+- **Import/export of progress** between browsers, since the data is one JSON blob already.
+
 ## Origin
 
-Built to learn one autonomy stack properly, then generalized when it became obvious the same
-workflow applied to every repo worth understanding deeply. It has since been run against a
-[Git implementation](https://github.com/brickster241/GitEngine), an
-[HTTP server](https://github.com/brickster241/PulseHTTP), a
-[JSON parser](https://github.com/brickster241/JSON-Lexer-Parser-From-Scratch) and a
-simulation stack — which is where most of the sharp edges above came from.
+Built to learn one specific repository properly, then generalized when it became obvious the
+same workflow applied to every repo worth understanding deeply. It has since been run against
+a Git implementation, an HTTP server, a JSON parser and a flight-simulation stack — which is
+where most of the sharp edges above came from.
 
 MIT — see [LICENSE](LICENSE).

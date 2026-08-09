@@ -1,110 +1,63 @@
 import type { TrackDraft } from '../../../data/types'
 
 /**
- * EXAMPLE TRACK — replace with real curriculum when instantiating.
- *
- * This file demonstrates every authoring feature the template supports:
- * multi-paragraph mental model with code/bold/italic inline formatting,
- * code anchors (with optional line for editor deep-links), all six item kinds,
- * quiz answers in `detail`, a click-to-load YouTube embed, per-lesson and
- * per-track resources, deep dive, prove-its, and (commented) deprecation.
- *
- * See references/curriculum.md in the skill for the authoring quality bar.
+ * The template ships with a real curriculum: the skill run on its own code.
+ * Tracks t00–t03 teach the template's actual machinery (every anchor exists),
+ * and t04 is the authoring showcase that demonstrates every supported feature.
+ * When instantiating for a real repo, delete this branch folder and author
+ * fresh — see references/curriculum.md for the quality bar.
  */
 export const t00: TrackDraft = {
   id: 't00',
   num: 0,
-  slug: 'example-track',
-  title: 'Example Track',
-  tagline: 'One sentence a stranger understands: what this track teaches and why it is first.',
+  slug: 'curriculum-data-model',
+  title: 'The curriculum data model',
+  tagline: 'Why a checklist ticked three weeks ago is still ticked — and what that costs authors.',
   phase: 'bedrock',
-  hours: [2, 4],
-  difficulty: 1,
+  hours: [1, 2],
+  difficulty: 2,
   dependsOn: [],
   mentalModel:
-    'Two or three paragraphs of plain language. Name the concept, then the shape of it in THIS repo. Use `code spans` for identifiers, **bold** for the load-bearing terms a learner should retain, and *italics* for emphasis.\n\nThe second paragraph usually answers: what are the moving parts, and what is the one non-obvious thing about how they fit? Write for a smart friend who has not seen the repo.',
+    'A curriculum is plain TypeScript data: `TrackDraft`s that authors write, assembled at load time into `Track`s by `assembleTrack`. The assembly step does one load-bearing thing — it derives every checklist item\'s id from its **position**: `t02.1.3` means track `t02`, second lesson, fourth item. Nothing else identifies an item.\n\nProgress lives in the learner\'s browser under those ids, keyed per branch. There is no server; `zustand`\'s persist middleware writes straight to `localStorage`. That is what makes the dashboard local-first — and what makes item **position** a public contract.',
   why:
-    'One paragraph: the engineering reason THIS repo does it this way — the trade-off taken, the alternative rejected, the invariant protected. This section is mandatory; it is what separates a curriculum from documentation.',
+    'Positional ids are the cheapest stable identity that survives editing prose. The alternative — hand-assigned ids on every item — would make authors invent and maintain thousands of names nobody reads. The price is the **append-only law**: reordering or deleting an item silently re-points a stranger\'s saved progress at different content. The law is not a style preference; it is the data model\'s one invariant, and every UPDATE rule in the skill exists to protect it.',
   anchors: [
-    { path: 'README.md', note: 'What this file is and why the learner opens it.' },
-    { path: 'src/main.ts', line: 42, note: 'Anchors can carry a line number — deep-links open the editor there.' },
+    { path: 'template/src/curriculum.ts', line: 39, note: 'The id derivation — three template literals are the entire identity scheme.' },
+    { path: 'template/src/data/types.ts', note: 'TrackDraft vs Track: what authors write vs what the app renders.' },
+    { path: 'template/src/store.ts', note: 'Per-branch slices; persist writes to localStorage under storeKey.' },
   ],
   lessons: [
     {
-      title: 'A lesson is a sitting: one concept, checkable',
+      title: 'From draft to rendered track',
       summary:
-        'A one-paragraph brief for the lesson: what the learner will be able to do afterwards, and the order of attack. Lessons render as challenge/response checklists — the summary is the briefing before the card.',
+        'Follow one track through assembly: what the author writes, what the loader adds, and where the ids come from.',
       items: [
-        { kind: 'read', text: 'READ items point at a file or doc, with a goal', detail: 'The detail row carries the "what to look for" — or for quiz items, the answer.' },
-        { kind: 'run', text: 'RUN items are commands with observable output', detail: 'Put the exact command here: `npm test -- --watch`' },
-        { kind: 'build', text: 'BUILD items make the learner write something small' },
-        { kind: 'quiz', text: 'QUIZ items ask a question answerable from the reading', detail: 'The answer lives here, revealed on expand.' },
-        { kind: 'watch', text: 'WATCH items link a video (or use the lesson video embed below)' },
-        { kind: 'write', text: 'WRITE items produce notes — predictions, runbooks, explanations' },
-      ],
-      video: {
-        // "Me at the zoo" — the first YouTube upload. Chosen because it is
-        // stable AND embeddable: rights holders can disable embedding per
-        // video, which renders a grey "Video unavailable" card that no
-        // pre-flight check can detect (oEmbed returns 200 either way and sends
-        // no CORS header). A placeholder that is embed-restricted makes a
-        // working integration look broken on first run.
-        youtubeId: 'jNQXAC9IVRw',
-        label: 'Replace with a real lecture — embeds load only when clicked',
-      },
-      resources: [
-        { label: 'Per-lesson resource', url: 'https://example.com', kind: 'doc', note: 'Optional note under the link.' },
+        { kind: 'read', text: 'Read `assembleTrack` in curriculum.ts end to end', detail: 'It is ~20 lines. Note what is derived (ids, item lists) and what passes through untouched.' },
+        { kind: 'quiz', text: 'What does the id `t03.0.2` point at, exactly?', detail: 'Track t03, first lesson, third item. Position is the whole identity — there is no lookup table.' },
+        { kind: 'run', text: 'Tick an item, reload the page, find it in devtools', detail: 'Application → Local Storage → the storeKey. The value is a map of positional ids to timestamps.' },
+        { kind: 'quiz', text: 'Why does deleting a lesson corrupt progress without any error?', detail: 'Every later lesson shifts down one position, so saved ids now resolve to different items. Nothing detects it because the ids still exist.' },
       ],
     },
     {
-      status: 'deprecated',
-      statusNote: 'Example note: module removed in commit abc1234 — kept for learners mid-track.',
-      title: 'Deprecation demo (this banner is what UPDATE produces)',
-      summary:
-        'When the UPDATE protocol finds a lesson whose subject left the codebase, it sets `status: "deprecated"` and a dated `statusNote` — never deletes. The UI shows a banner; progress and notes survive.',
+      title: 'The append-only law',
+      summary: 'The one rule that follows from the data model, and how content leaves a curriculum.',
       items: [
-        { kind: 'quiz', text: 'Why deprecate instead of delete?', detail: 'Checklist IDs are positional — deletion orphans saved progress. And the learner may be mid-lesson: stale knowledge with a "this changed" flag beats a hole.' },
+        { kind: 'read', text: 'Read the deprecation fields on Lesson in types.ts', detail: '`status: "deprecated"` plus a dated statusNote — the UI banners it, progress survives.' },
+        { kind: 'quiz', text: 'A module was deleted from the host repo. What happens to its lesson?', detail: 'It is deprecated with a note naming the replacement, never removed. The learner may be mid-lesson; stale-but-flagged beats vanished.' },
+        { kind: 'write', text: 'Write the failure story: what a learner sees if an UPDATE reorders lessons instead', detail: 'Work it through — ticks appear on items they never did, and their notes describe the wrong lesson. That story is why the law exists.' },
       ],
     },
   ],
   deepDive: {
-    title: 'Optional depth, clearly gated',
+    title: 'Why not content-hashed ids?',
     body:
-      'The deep dive is where the theory, the proofs, or the "what else exists" survey lives — material for the second pass, never required for the checklists. One or two paragraphs; end with a concrete exercise when possible.',
+      'Hashing an item\'s text would survive reordering — and break on every prose edit, which authors do constantly and reordering is forbidden anyway. Position is stable under the one mutation the law permits (append) and cheap under the one it encourages (editing text in place). The design chooses which change is expensive, and it chooses the rare one.',
   },
   proveIt: [
-    'Prove-its are change-one-thing exercises with an observable result: change X, predict Y, run, compare.',
-    'Two or three per track. If you cannot write one, the track is too abstract — fix the track.',
+    'Append a third lesson to this track locally, rebuild, and confirm every existing tick survives. Then insert it FIRST instead and watch the ticks land on the wrong lessons.',
+    'Change storeKey in branches/index.ts, reload, and explain where the progress "went".',
   ],
   resources: [
-    {
-      label: 'A YouTube link previews inline — click the row',
-      url: 'https://www.youtube.com/watch?v=lJ8ydIuPFeU',
-      kind: 'video',
-      note: 'watch?v=, youtu.be/ and /embed/ are all detected, and ?t=1m30s is honoured. Nothing loads until clicked.',
-    },
-    {
-      label: 'An arXiv link opens the PDF inline',
-      url: 'https://arxiv.org/abs/1706.03762',
-      kind: 'paper',
-      note: 'The /abs/ page is rewritten to /pdf/ automatically. Any .pdf URL previews the same way.',
-    },
-    {
-      label: 'An allow-listed doc host previews as a page',
-      url: 'https://www.rfc-editor.org/rfc/rfc9110.html',
-      kind: 'doc',
-      note: 'Only hosts measured to permit framing preview inline — see scripts/probe-framing.sh.',
-    },
-    {
-      label: 'Most other sites refuse framing, so they open in a tab',
-      url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429',
-      kind: 'doc',
-      note: 'MDN sends X-Frame-Options: DENY. Deliberate: a blocked iframe renders as a blank box, which is worse than an honest link.',
-    },
-    {
-      label: 'A resource without a URL renders as a plain row',
-      kind: 'book',
-      note: 'Use for books and papers cited by name.',
-    },
+    { label: 'zustand persist middleware', url: 'https://zustand.docs.pmnd.rs/integrations/persisting-store-data', kind: 'doc' },
   ],
 }

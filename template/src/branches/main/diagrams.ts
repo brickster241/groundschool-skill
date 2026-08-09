@@ -10,7 +10,7 @@ import systemMap from './diagrams/system-map.svg?raw'
  * diagrams from the code, then verify each name exists.
  */
 export const diagrams: Record<string, DiagramSpec[]> = {
-  t00: [
+  t04: [
     {
       title: 'System map — the example diagram language',
       caption:

@@ -69,7 +69,8 @@ cd "<repo>/groundschool" && npm install
 
 Then make it the repo's own:
 
-- Delete the example branch folders (`src/branches/main/`, `src/branches/sandbox/`) and
+- Delete the bundled demo branches (`src/branches/main/` — the template's self-curriculum — and
+  `src/branches/sandbox/`) and
   create `src/branches/<branch>/` for the target branch. Register it in
   `src/branches/index.ts`: the bundle entry, `defaultBranch`, and `storeKey`
   (`groundschool-<repo>-v2`, unique per repo).

@@ -108,14 +108,15 @@ function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
     if (!meta.editor) return
     e.preventDefault()
     setProblem(null)
-    requestOpen(meta.editor, abs, anchor.line).then((reason) => {
-      if (!reason) return
-      // No server route — let the browser try the handler after all.
-      if (target?.href && reason.startsWith('No dev server')) {
-        window.location.href = target.href
+    requestOpen(meta.editor, abs, anchor.line).then((r) => {
+      if (r.kind === 'opened') return
+      if (r.kind === 'no-route') {
+        // Statically served copy — let the browser try the protocol handler.
+        if (target?.href) window.location.href = target.href
+        else setProblem('No dev server is running to open the editor.')
         return
       }
-      setProblem(reason)
+      setProblem(r.reason)
     })
   }
 

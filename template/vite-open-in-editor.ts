@@ -28,15 +28,22 @@ import type { Plugin, Connect } from 'vite'
  * loopback check is what stops a phone on the same wifi from opening files.
  */
 
-/** id → argv builder. The request picks an id; it never supplies a command. */
-const EDITOR_ARGV: Record<string, (target: string) => string[]> = {
-  vscode: (t) => ['code', '-g', t],
-  'vscode-insiders': (t) => ['code-insiders', '-g', t],
-  cursor: (t) => ['cursor', '-g', t],
-  windsurf: (t) => ['windsurf', '-g', t],
-  zed: (t) => ['zed', t],
-  sublime: (t) => ['subl', t],
-  jetbrains: (t) => ['idea', '--line', ...t.split(':').reverse()],
+/**
+ * id → argv builder. The request picks an id; it never supplies a command.
+ *
+ * Builders take the path and line separately rather than a joined
+ * `path:line`, because splitting that back apart cannot be done portably —
+ * on Windows the drive letter in `C:\repo\main.go:12` is indistinguishable
+ * from a line separator.
+ */
+const EDITOR_ARGV: Record<string, (abs: string, line?: number) => string[]> = {
+  vscode: (p, l) => ['code', '-g', l ? `${p}:${l}` : p],
+  'vscode-insiders': (p, l) => ['code-insiders', '-g', l ? `${p}:${l}` : p],
+  cursor: (p, l) => ['cursor', '-g', l ? `${p}:${l}` : p],
+  windsurf: (p, l) => ['windsurf', '-g', l ? `${p}:${l}` : p],
+  zed: (p, l) => ['zed', l ? `${p}:${l}` : p],
+  sublime: (p, l) => ['subl', l ? `${p}:${l}` : p],
+  jetbrains: (p, l) => (l ? ['idea', '--line', String(l), p] : ['idea', p]),
 }
 
 function isLoopback(remote: string | undefined): boolean {
@@ -104,12 +111,22 @@ export function openInEditor(options: OpenInEditorOptions = {}): Plugin {
       }
 
       const line = Number(payload.line)
-      const target = Number.isInteger(line) && line > 0 ? `${abs}:${line}` : abs
-      const [cmd, ...args] = argvFor(target)
+      const safeLine = Number.isInteger(line) && line > 0 ? line : undefined
+      const [cmd, ...args] = argvFor(abs, safeLine)
 
       // execFile, not exec: arguments are passed as an array, so a path with a
       // space or a quote is data rather than shell syntax.
-      execFile(cmd, args, { timeout: 10_000 }, (err) => {
+      //
+      // Windows is the exception, on two counts. The VS Code family installs
+      // its CLI as a `.cmd` shim, and Node refuses to spawn `.cmd`/`.bat`
+      // without a shell (CVE-2024-27980) — so a shell it is. That normally
+      // reopens the quoting problem execFile exists to avoid, but not here:
+      // `"` is not a legal character in a Windows path, and the path is the
+      // only request-controlled text in the argv (the command comes from the
+      // fixed table above). Quoting each argument is therefore airtight.
+      const windows = process.platform === 'win32'
+      const finalArgs = windows ? args.map((a) => `"${a}"`) : args
+      execFile(cmd, finalArgs, { timeout: 10_000, shell: windows }, (err) => {
         if (err) {
           const missing = (err as NodeJS.ErrnoException).code === 'ENOENT'
           return fail(

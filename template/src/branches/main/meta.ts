@@ -1,21 +1,22 @@
 import type { Meta } from '../../data/types'
 
 /**
- * EXAMPLE meta — replace every field when instantiating for a real repo.
- * This file is the only place the app shell reads branding/config from.
+ * This branch is the template's own curriculum — the skill run on itself.
+ * When instantiating for a real repo, replace every field; the doc comments
+ * on the Meta type are the spec.
  */
 export const meta: Meta = {
-  repoName: 'EXAMPLE',
-  title: 'Example Ground School',
-  eyebrow: 'Read the system you already built',
+  repoName: 'GROUNDSCHOOL',
+  title: 'Groundschool Ground School',
+  eyebrow: 'The skill, run on its own code',
   intro:
-    'The fundamentals under `~/Coding/example` — replace this intro with two sentences that name the repo, what it does, and what studying it leads to.',
-  repoPath: '~/Coding/example',
-  repoPathAbs: '/Users/you/Coding/example',
-  statusChips: [],
-  motto: 'READ THE CODE · PROVE IT BY CHANGING ONE THING · WRITE IT DOWN',
-  systemMapTitle: 'System map — the one mental model',
-  systemMapFlow: 'input ▼ output ▲',
+    'The machinery under this template — positional identity, the embed allow-list, the editor bridge, and the update law. Every anchor points at a file in this repository.',
+  repoPath: '~/.claude/skills/groundschool',
+  repoPathAbs: '/Users/you/.claude/skills/groundschool',
+  statusChips: ['SELF-HOSTING', 'ANCHORS VERIFIED'],
+  motto: 'READ THE CODE \u00b7 PROVE IT BY CHANGING ONE THING \u00b7 WRITE IT DOWN',
+  systemMapTitle: 'System map \u2014 how a curriculum gets made',
+  systemMapFlow: 'generate \u25bc update \u25b2',
   editor: 'vscode',
-  baseline: { branch: 'main', commit: '0000000', date: '1970-01-01' },
+  baseline: { branch: 'main', commit: 'f8a1fa3', date: '2026-08-09' },
 }

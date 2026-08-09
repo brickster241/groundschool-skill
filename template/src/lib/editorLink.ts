@@ -29,14 +29,35 @@ export type EditorId =
   | 'jetbrains'
   | 'sublime'
 
-/** Encode each path segment but keep the separators — `encodeURI` alone leaves `#` and `?` live. */
-function encodePath(abs: string): string {
-  return abs.split('/').map(encodeURIComponent).join('/')
+/** True for `C:\…` / `C:/…` — a curriculum authored on Windows. */
+function isWindowsPath(p: string): boolean {
+  return /^[a-zA-Z]:[\\/]/.test(p)
 }
 
-/** Join the repo root and a repo-relative path without doubling or dropping the separator. */
+/**
+ * Encode each path segment but keep the separators — `encodeURI` alone leaves
+ * `#` and `?` live. Windows paths are normalised to forward slashes and given
+ * the leading `/` the `file` URL form requires: VS Code expects
+ * `vscode://file/c:/repo/main.go`, not `vscode://fileC:\repo\main.go`.
+ */
+function encodePath(abs: string): string {
+  const posix = abs.replace(/\\/g, '/')
+  const prefixed = posix.startsWith('/') ? posix : `/${posix}`
+  // Segment-wise so the separators survive; drive-letter colon must too.
+  return prefixed
+    .split('/')
+    .map((seg) => (/^[a-zA-Z]:$/.test(seg) ? seg : encodeURIComponent(seg)))
+    .join('/')
+}
+
+/**
+ * Join the repo root and a repo-relative path without doubling or dropping the
+ * separator. Anchors always use `/` (they are authored repo-relative); the
+ * root keeps whatever separator style its OS gave it, which Windows APIs and
+ * every editor CLI accept mixed with `/`.
+ */
 export function absolutePath(repoRoot: string, relPath: string): string {
-  return `${repoRoot.replace(/\/+$/, '')}/${relPath.replace(/^\/+/, '')}`
+  return `${repoRoot.replace(/[\\/]+$/, '')}${isWindowsPath(repoRoot) ? '\\' : '/'}${relPath.replace(/^\/+/, '')}`
 }
 
 interface EditorSpec {
@@ -149,6 +170,20 @@ export const EDITOR_IDS = Object.keys(EDITORS) as EditorId[]
 export const editorName = (id: EditorId): string => EDITORS[id].name
 
 /**
+ * Outcome of asking the server to open a file.
+ *
+ * Three states, not two, because "there is no such route" is a different
+ * situation from "the route said no": the first means fall back to the
+ * protocol URL, the second means show the reason. Collapsing them into a
+ * string and matching on its text is how the fallback quietly stops working.
+ */
+export type OpenResult =
+  | { kind: 'opened' }
+  /** Nothing is listening for `/__open` — a statically served copy. */
+  | { kind: 'no-route' }
+  | { kind: 'refused'; reason: string }
+
+/**
  * Ask the dev server to open the file, since it is the process that actually
  * lives on the machine holding the repo.
  *
@@ -157,29 +192,36 @@ export const editorName = (id: EditorId): string => EDITORS[id].name
  * refuses to let an `http://localhost` origin remember, and resolves the URL
  * on whatever device is showing the page rather than the one running the
  * server. See vite-open-in-editor.ts.
- *
- * Resolves to `null` on success, or a sentence explaining the failure —
- * including the case where the server has no such route, which is what
- * happens when a ground school is served as static files by something other
- * than Vite.
  */
 export async function requestOpen(
   editor: EditorId,
   abs: string,
   line?: number,
-): Promise<string | null> {
+): Promise<OpenResult> {
+  let res: Response
   try {
-    const res = await fetch('/__open', {
+    res = await fetch('/__open', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ editor, path: abs, line }),
     })
-    if (res.ok) return null
-    // A plain static host answers 404 for an unknown POST route, and an HTML
-    // error page is not a reason we can quote at the reader.
-    const body = await res.json().catch(() => null)
-    return (body as { reason?: string } | null)?.reason ?? 'The server could not open it.'
   } catch {
-    return 'No dev server to ask — this page is being served statically.'
+    // Connection refused, offline, blocked — nothing answered at all.
+    return { kind: 'no-route' }
   }
+
+  if (res.ok) return { kind: 'opened' }
+
+  // `fetch` does not throw on an HTTP error, so this branch runs both when
+  // the plugin refused and when the page is served by something without the
+  // plugin at all (a static host answering an unknown POST with 404/405).
+  // Status codes cannot tell those apart — the plugin itself uses 404 for a
+  // missing file — but the body can: the plugin always sends
+  // `{ok:false, reason}`, and a generic error page is HTML. Parse, don't
+  // pattern-match on numbers.
+  const body = (await res.json().catch(() => null)) as { ok?: boolean; reason?: string } | null
+  if (body && body.ok === false && typeof body.reason === 'string') {
+    return { kind: 'refused', reason: body.reason }
+  }
+  return { kind: 'no-route' }
 }
