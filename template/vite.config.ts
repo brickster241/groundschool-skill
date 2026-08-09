@@ -6,6 +6,11 @@ import tailwindcss from '@tailwindcss/vite'
 import { openInEditor } from './vite-open-in-editor.js'
 
 export default defineConfig({
+  // Relative base: the built app must work from ANY mount point — file://,
+  // a subpath like /groundschool-skill/ on GitHub Pages, or a repo's own
+  // static host. HashRouter already makes routing base-agnostic; this makes
+  // the assets match.
+  base: './',
   // `openInEditor` serves POST /__open so code-anchor links open a file
   // directly, instead of relying on a `vscode://` handler the browser gates
   // behind a prompt it will not let localhost remember. See the plugin for
