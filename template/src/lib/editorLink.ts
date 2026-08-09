@@ -42,8 +42,14 @@ export function absolutePath(repoRoot: string, relPath: string): string {
 interface EditorSpec {
   /** Display name for tooltips and labels. */
   name: string
-  /** Protocol-handler URL. `line` is already validated to be a positive integer or undefined. */
-  href: (abs: string, line?: number) => string
+  /**
+   * Protocol-handler URL, or `null` for editors that have no working file+line
+   * URL form at all. Zed and Sublime are in that category: emitting a
+   * `zed://file…` URL produces a link that can never resolve, which is worse
+   * than showing no link, because the learner blames themselves for the
+   * silence. Those editors get the shell command only.
+   */
+  href: ((abs: string, line?: number) => string) | null
   /** Shell command that always works, for the copy-command fallback. */
   cli: (abs: string, line?: number) => string
 }
@@ -51,27 +57,29 @@ interface EditorSpec {
 const EDITORS: Record<EditorId, EditorSpec> = {
   vscode: {
     name: 'VS Code',
-    href: (p, l) => `vscode://file${encodePath(p)}${l ? `:${l}` : ''}`,
+    href: (p, l) => `vscode://file${encodePath(p)}${l ? `:${l}:1` : ''}`,
     cli: (p, l) => `code -g ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
   'vscode-insiders': {
     name: 'VS Code Insiders',
-    href: (p, l) => `vscode-insiders://file${encodePath(p)}${l ? `:${l}` : ''}`,
+    href: (p, l) => `vscode-insiders://file${encodePath(p)}${l ? `:${l}:1` : ''}`,
     cli: (p, l) => `code-insiders -g ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
   cursor: {
     name: 'Cursor',
-    href: (p, l) => `cursor://file${encodePath(p)}${l ? `:${l}` : ''}`,
+    href: (p, l) => `cursor://file${encodePath(p)}${l ? `:${l}:1` : ''}`,
     cli: (p, l) => `cursor -g ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
   windsurf: {
     name: 'Windsurf',
-    href: (p, l) => `windsurf://file${encodePath(p)}${l ? `:${l}` : ''}`,
+    href: (p, l) => `windsurf://file${encodePath(p)}${l ? `:${l}:1` : ''}`,
     cli: (p, l) => `windsurf -g ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
   zed: {
+    // Zed registers no file+line URL scheme. `zed <path>:<line>` on the CLI is
+    // the only reliable way in, so that is what we offer.
     name: 'Zed',
-    href: (p, l) => `zed://file${encodePath(p)}${l ? `:${l}` : ''}`,
+    href: null,
     cli: (p, l) => `zed ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
   jetbrains: {
@@ -84,10 +92,10 @@ const EDITORS: Record<EditorId, EditorSpec> = {
     cli: (p, l) => (l ? `idea --line ${l} ${shellQuote(p)}` : `idea ${shellQuote(p)}`),
   },
   sublime: {
-    // Wraps a file:// URL in a query parameter — again, not the path shape.
+    // `subl://open?url=…` exists in the wild but is not a documented, reliably
+    // registered handler across installs. CLI only, for the same reason as Zed.
     name: 'Sublime Text',
-    href: (p, l) =>
-      `subl://open?url=file://${encodeURIComponent(p)}${l ? `&line=${l}` : ''}`,
+    href: null,
     cli: (p, l) => `subl ${shellQuote(`${p}${l ? `:${l}` : ''}`)}`,
   },
 }
@@ -98,8 +106,11 @@ function shellQuote(s: string): string {
 }
 
 export interface OpenTarget {
-  /** Protocol-handler URL — may or may not fire; the browser will not tell us. */
-  href: string
+  /**
+   * Protocol-handler URL, or `null` when this editor has no such form.
+   * Even when present it may not fire — the browser will not tell us.
+   */
+  href: string | null
   /** Shell command that always works. This is the reliable path. */
   cli: string
   /** Absolute path, for plain copying. */
@@ -127,7 +138,7 @@ export function openTarget(
   if (!spec) return null
   const safeLine = Number.isInteger(line) && (line as number) > 0 ? line : undefined
   return {
-    href: spec.href(abs, safeLine),
+    href: spec.href ? spec.href(abs, safeLine) : null,
     cli: spec.cli(abs, safeLine),
     abs,
     editorName: spec.name,

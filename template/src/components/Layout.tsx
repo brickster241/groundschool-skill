@@ -8,10 +8,45 @@ import { branchNames, useCurriculum } from '../curriculum'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { CommandPalette } from './CommandPalette'
 
-/** Sidebar branch switcher — appears only when more than one branch is registered. */
-function BranchSwitcher() {
+/**
+ * Branch chips.
+ *
+ * `layoutId` must be unique per mounted instance: the sidebar is only hidden
+ * with CSS on small screens, so the mobile and desktop switchers are BOTH in
+ * the tree at all times. Two elements sharing one `layoutId` make the shared
+ * pill animate between a visible and a `display:none` box.
+ */
+function BranchChips({ pillId }: { pillId: string }) {
   const branch = useProgress((s) => s.branch)
   const setBranch = useProgress((s) => s.setBranch)
+
+  return (
+    <div className="flex flex-wrap gap-1">
+      {branchNames.map((b) => (
+        <button
+          key={b}
+          onClick={() => setBranch(b)}
+          aria-pressed={b === branch}
+          className={`relative rounded-md px-2 py-1 font-mono text-[11px] transition-colors ${
+            b === branch ? 'text-night' : 'text-dim hover:text-ink'
+          }`}
+        >
+          {b === branch && (
+            <motion.span
+              layoutId={pillId}
+              className="absolute inset-0 rounded-md bg-amber"
+              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
+            />
+          )}
+          <span className="relative">{b}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Sidebar branch switcher — appears only when more than one branch is registered. */
+function BranchSwitcher() {
   if (branchNames.length < 2) return null
 
   return (
@@ -19,26 +54,7 @@ function BranchSwitcher() {
       <div className="placard mb-2 flex items-center gap-1.5">
         <GitBranch className="h-3 w-3" /> Branch
       </div>
-      <div className="flex flex-wrap gap-1">
-        {branchNames.map((b) => (
-          <button
-            key={b}
-            onClick={() => setBranch(b)}
-            className={`relative rounded-md px-2 py-1 font-mono text-[11px] transition-colors ${
-              b === branch ? 'text-night' : 'text-dim hover:text-ink'
-            }`}
-          >
-            {b === branch && (
-              <motion.span
-                layoutId="branch-pill"
-                className="absolute inset-0 rounded-md bg-amber"
-                transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-              />
-            )}
-            <span className="relative">{b}</span>
-          </button>
-        ))}
-      </div>
+      <BranchChips pillId="branch-pill-desktop" />
     </div>
   )
 }
@@ -166,27 +182,57 @@ export function Layout() {
       </aside>
 
       <main className="min-w-0 flex-1">
-        {/* mobile top bar */}
-        <div className="sticky top-0 z-40 flex items-center justify-between border-b border-line bg-night/90 px-4 py-3 backdrop-blur md:hidden">
-          <NavLink to="/" className="flex items-center gap-2">
-            <img src="./roundel.svg" alt="" className="h-6 w-6" />
-            <span className="font-display text-sm font-bold text-ink">GROUND SCHOOL</span>
-          </NavLink>
-          <div className="flex items-center gap-1">
+        {/*
+          Mobile top bar.
+
+          Two rows, because one row cannot hold it. The sidebar is the only
+          place search and the branch switcher used to live, and it is
+          `md:` only — so on a phone a multi-branch ground school had no way
+          to change branch and no way to search at all.
+
+          The nav scrolls horizontally rather than shrinking: seven icons
+          squeezed into 375px gives ~32px targets, under the 44px that a
+          thumb actually hits.
+        */}
+        <div className="sticky top-0 z-40 border-b border-line bg-night/90 backdrop-blur md:hidden">
+          <div className="flex items-center justify-between gap-3 px-4 pt-3">
+            <NavLink to="/" className="flex min-w-0 items-center gap-2">
+              <img src="./roundel.svg" alt="" className="h-6 w-6 shrink-0" />
+              <span className="truncate font-display text-sm font-bold text-ink">
+                GROUND SCHOOL
+              </span>
+            </NavLink>
+            <div className="flex shrink-0 items-center gap-2">
+              {branchNames.length > 1 && <BranchChips pillId="branch-pill-mobile" />}
+              <button
+                onClick={() => setPaletteOpen(true)}
+                aria-label="Search"
+                className="-mr-2 flex h-11 w-11 items-center justify-center rounded-md text-dim"
+              >
+                <Search className="h-[18px] w-[18px]" />
+              </button>
+            </div>
+          </div>
+          <nav
+            aria-label="Sections"
+            className="flex gap-1 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          >
             {nav.map(({ to, icon: Icon, end, label }) => (
               <NavLink
                 key={to}
                 to={to}
                 end={end}
-                aria-label={label}
                 className={({ isActive }) =>
-                  `rounded p-2 ${isActive ? 'text-amber' : 'text-dim'}`
+                  `flex h-11 shrink-0 items-center gap-1.5 rounded-md px-2.5 text-[12px] whitespace-nowrap ${
+                    isActive ? 'text-amber' : 'text-dim'
+                  }`
                 }
               >
-                <Icon className="h-4 w-4" />
+                <Icon className="h-4 w-4 shrink-0" />
+                {label}
               </NavLink>
             ))}
-          </div>
+          </nav>
         </div>
         <Outlet />
       </main>

@@ -19,15 +19,22 @@ function upNextFor(c: Curriculum, checks: Record<string, number>, last: string |
     const frac = fractionDone(c.trackItemIds.get(t.id) ?? [], checks)
     if (frac < 1) return { track: t, resumed: false }
   }
-  return { track: c.tracks[c.tracks.length - 1], resumed: false }
+  // Empty curriculum: there is no 'up next'. Every other page already
+  // degrades to an empty state; the landing page was the one that threw.
+  const lastOfAll = c.tracks[c.tracks.length - 1]
+  return lastOfAll ? { track: lastOfAll, resumed: false } : null
 }
 
 export function Dashboard() {
   const c = useCurriculum()
   const checks = useChecks()
   const last = useLastTrack()
-  const done = Object.keys(checks).length
-  const frac = c.totalItems === 0 ? 0 : done / c.totalItems
+  // Count only ids this figure is measured against. The planner writes its
+  // own checklist ids into the same map, so counting every key let planner
+  // progress inflate track completion past 100%.
+  const trackIds = [...c.trackItemIds.values()].flat()
+  const done = trackIds.filter((id) => checks[id]).length
+  const frac = c.totalItems === 0 ? 0 : Math.min(1, done / c.totalItems)
   const upNext = upNextFor(c, checks, last)
   const hasPipeline = c.pipeline.length > 0
 
@@ -60,21 +67,32 @@ export function Dashboard() {
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.1, duration: 0.5 }}
-        className="mt-8 grid gap-4 md:grid-cols-[1fr_auto]"
+        className="mt-8 grid grid-cols-[minmax(0,1fr)] gap-4 md:grid-cols-[minmax(0,1fr)_auto]"
       >
-        <Link
-          to={`/track/${upNext.track.slug}`}
-          className="group flex items-center justify-between gap-4 rounded-xl border border-amber/30 bg-panel px-5 py-4 transition-colors hover:border-amber/60"
-        >
-          <div>
-            <span className="placard text-amber">{upNext.resumed ? 'Resume' : 'Up next'}</span>
-            <div className="mt-1 font-display text-lg font-semibold text-ink">
-              T{String(upNext.track.num).padStart(2, '0')} — {upNext.track.title}
+        {upNext ? (
+          <Link
+            to={`/track/${upNext.track.slug}`}
+            className="group flex items-center justify-between gap-4 rounded-xl border border-amber/30 bg-panel px-5 py-4 transition-colors hover:border-amber/60"
+          >
+            <div>
+              <span className="placard text-amber">{upNext.resumed ? 'Resume' : 'Up next'}</span>
+              <div className="mt-1 font-display text-lg font-semibold text-ink">
+                T{String(upNext.track.num).padStart(2, '0')} — {upNext.track.title}
+              </div>
+              <p className="mt-0.5 max-w-xl text-xs text-dim">{upNext.track.tagline}</p>
             </div>
-            <p className="mt-0.5 max-w-xl text-xs text-dim">{upNext.track.tagline}</p>
+            <ArrowRight className="h-5 w-5 shrink-0 text-amber transition-transform group-hover:translate-x-1" />
+          </Link>
+        ) : (
+          <div className="rounded-xl border border-line bg-panel px-5 py-4">
+            <span className="placard text-faint">No tracks yet</span>
+            <p className="mt-1 max-w-xl text-xs text-dim">
+              This branch has no curriculum authored yet. Add a track to{' '}
+              <code className="font-mono text-[11px] text-hud">src/branches/</code> and it will
+              appear here.
+            </p>
           </div>
-          <ArrowRight className="h-5 w-5 shrink-0 text-amber transition-transform group-hover:translate-x-1" />
-        </Link>
+        )}
         <div className="flex items-center gap-4 rounded-xl border border-line bg-panel px-5 py-4">
           <ProgressRing fraction={frac} size={64} stroke={5} />
           <div className="font-mono text-[11px] leading-relaxed tracking-wider text-dim">
@@ -85,7 +103,7 @@ export function Dashboard() {
       </motion.section>
 
       {/* system map + phases */}
-      <section className={`mt-8 grid items-start gap-6 ${hasPipeline ? 'lg:grid-cols-[1.2fr_1fr]' : ''}`}>
+      <section className={`mt-8 grid grid-cols-[minmax(0,1fr)] items-start gap-6 ${hasPipeline ? 'lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]' : ''}`}>
         {hasPipeline && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}

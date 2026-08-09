@@ -144,10 +144,25 @@ textarea:focus-visible {
 }
 
 /* inline architecture diagrams */
+.diagram-svg {
+  overflow-x: auto;
+}
 .diagram-svg svg {
   display: block;
   width: 100%;
   height: auto;
+  /*
+   * Scroll rather than shrink on a narrow screen. A schematic authored at
+   * ~900px with 11px labels becomes 4px type on a phone, which is not "small"
+   * — it is unreadable, and the reader has no way to know they are missing
+   * anything. Below this floor the panel scrolls sideways instead.
+   */
+  min-width: 560px;
+}
+@media (min-width: 768px) {
+  .diagram-svg svg {
+    min-width: 0;
+  }
 }
 
 /* 3D flip cards (FlashDeck) */

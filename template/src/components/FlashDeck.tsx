@@ -46,29 +46,41 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
     setFlipped(false)
   }
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement
-      if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA') return
-      if (e.key === 'ArrowRight') go(1)
-      else if (e.key === 'ArrowLeft') go(-1)
-      else if (e.key === ' ' || e.key === 'Enter') {
-        // don't steal Enter/space from focused buttons/links
-        if (t.tagName === 'BUTTON' || t.tagName === 'A') return
-        e.preventDefault()
-        setFlipped((f) => !f)
-      }
+  /**
+   * Keys are handled on the deck, not on `window`.
+   *
+   * A window listener made ←/→ mean "change flashcard" everywhere on the
+   * page — including while reading a track, where the deck is a small panel
+   * far below the fold. Arrow keys are the page's scroll keys; stealing them
+   * globally to mutate an off-screen widget is invisible and infuriating.
+   * Scoped here, the controls work exactly when the deck has focus.
+   */
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    const t = e.target as HTMLElement
+    if (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable) return
+    if (e.key === 'ArrowRight') { e.preventDefault(); go(1) }
+    else if (e.key === 'ArrowLeft') { e.preventDefault(); go(-1) }
+    else if (e.key === ' ' || e.key === 'Enter') {
+      // The card itself is a button; let it handle its own activation.
+      if (t.tagName === 'BUTTON' || t.tagName === 'A') return
+      e.preventDefault()
+      setFlipped((f) => !f)
     }
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [go])
+  }
 
   const dots = useMemo(() => order.map((_, di) => di), [order])
 
   if (!card) return null
 
   return (
-    <div>
+    <div
+      tabIndex={0}
+      onKeyDown={onKeyDown}
+      role="group"
+      aria-roledescription="flashcard deck"
+      aria-label={`${deckLabel} — ${order.length} cards`}
+      className="rounded-xl focus:outline-none focus-visible:ring-1 focus-visible:ring-hud/60"
+    >
       <div className="mb-2 flex items-center justify-between">
         <span className="placard">{deckLabel}</span>
         <div className="flex items-center gap-3">
@@ -96,7 +108,8 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
 
         <button
           onClick={() => setFlipped((f) => !f)}
-          aria-label={flipped ? 'Show front' : 'Reveal answer'}
+          aria-label={flipped ? 'Show prompt' : 'Reveal answer'}
+          aria-pressed={flipped}
           className="flip-scene relative block w-full text-left"
         >
           <motion.div
@@ -104,7 +117,10 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
             animate={{ rotateY: flipped ? 180 : 0 }}
             transition={{ type: 'spring', stiffness: 240, damping: 26 }}
           >
-            <div className="flip-face flex min-h-44 flex-col rounded-xl border border-line bg-panel px-5 py-4">
+            <div
+              aria-hidden={flipped}
+              className="flip-face flex min-h-44 flex-col rounded-xl border border-line bg-panel px-5 py-4"
+            >
               <span className="placard text-hud">Prompt</span>
               <span className="flex flex-1 items-center py-3 text-[15px] leading-relaxed text-ink">
                 <span>{inline(card.front)}</span>
@@ -113,7 +129,10 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
                 TAP OR SPACE TO FLIP
               </span>
             </div>
-            <div className="flip-face flip-back absolute inset-0 flex flex-col rounded-xl border border-amber/40 bg-panel px-5 py-4">
+            <div
+              aria-hidden={!flipped}
+              className="flip-face flip-back absolute inset-0 flex flex-col rounded-xl border border-amber/40 bg-panel px-5 py-4"
+            >
               <span className="placard text-amber">Answer</span>
               <span className="flex flex-1 items-center py-3 text-[14px] leading-relaxed text-ink/95">
                 <span>{inline(card.back)}</span>
@@ -122,6 +141,11 @@ export function FlashDeck({ cards, deckLabel }: { cards: Flashcard[]; deckLabel:
           </motion.div>
         </button>
       </div>
+
+      {/* Card position, for anyone who cannot see the dots. */}
+      <p className="sr-only" aria-live="polite">
+        Card {i + 1} of {order.length}
+      </p>
 
       {/* controls */}
       <div className="mt-3 flex items-center justify-between">

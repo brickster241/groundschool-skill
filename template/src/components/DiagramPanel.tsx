@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { motion } from 'motion/react'
 import DOMPurify from 'dompurify'
 import { Maximize2, X } from 'lucide-react'
 import type { DiagramSpec } from '../data/types'
+import { namespaceSvgIds } from '../lib/svgIds'
 
 /**
  * An architecture diagram: inline SVG (so the app's fonts/palette apply),
@@ -11,11 +12,16 @@ import type { DiagramSpec } from '../data/types'
  */
 export function DiagramPanel({ d }: { d: DiagramSpec }) {
   const [open, setOpen] = useState(false)
+  const uid = useId().replace(/:/g, '')
 
+  // Two renderings of the same markup, so each gets its own id namespace —
+  // see lib/svgIds.ts for what breaks when they share one.
   const clean = useMemo(
     () => DOMPurify.sanitize(d.svg, { USE_PROFILES: { svg: true, svgFilters: true } }),
     [d.svg],
   )
+  const inlineSvg = useMemo(() => namespaceSvgIds(clean, `d${uid}i`), [clean, uid])
+  const zoomSvg = useMemo(() => namespaceSvgIds(clean, `d${uid}z`), [clean, uid])
 
   useEffect(() => {
     if (!open) return
@@ -23,7 +29,12 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
       if (e.key === 'Escape') setOpen(false)
     }
     window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      document.body.style.overflow = prevOverflow
+    }
   }, [open])
 
   return (
@@ -43,7 +54,7 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
         <button
           onClick={() => setOpen(true)}
           className="diagram-svg block w-full cursor-zoom-in p-4"
-          dangerouslySetInnerHTML={{ __html: clean }}
+          dangerouslySetInnerHTML={{ __html: inlineSvg }}
         />
         {d.caption && (
           <p className="border-t border-line/60 px-4 py-2 text-[12px] leading-relaxed text-dim">
@@ -57,6 +68,9 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label={d.title}
             className="fixed inset-0 z-50 flex flex-col bg-night/95 backdrop-blur-sm"
             onClick={() => setOpen(false)}
           >
@@ -76,7 +90,7 @@ export function DiagramPanel({ d }: { d: DiagramSpec }) {
               transition={{ type: 'spring', stiffness: 260, damping: 26 }}
               className="diagram-svg mx-auto w-full max-w-6xl flex-1 overflow-auto px-6 pb-8"
               onClick={(e) => e.stopPropagation()}
-              dangerouslySetInnerHTML={{ __html: clean }}
+              dangerouslySetInnerHTML={{ __html: zoomSvg }}
             />
           </motion.div>
         )}

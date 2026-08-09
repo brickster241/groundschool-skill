@@ -21,7 +21,10 @@ export function Checkride({ trackId, questions }: { trackId: string; questions: 
   const [correct, setCorrect] = useState(0)
   const [done, setDone] = useState(false)
 
-  const q = questions[idx]
+  // Clamp: the router keeps this component mounted across /track/:slug
+  // changes, so a stale idx from a longer quiz would index past the end.
+  // The key={} on the call site remounts us, this is the second belt.
+  const q = questions[Math.min(idx, questions.length - 1)]
   const answered = selected !== null
 
   const pick = (i: number) => {

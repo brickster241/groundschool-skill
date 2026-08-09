@@ -17,6 +17,7 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   const [sel, setSel] = useState(0)
   const nav = useNavigate()
   const inputRef = useRef<HTMLInputElement>(null)
+  const listRef = useRef<HTMLUListElement>(null)
 
   const index = useMemo<Hit[]>(
     () => [
@@ -55,14 +56,35 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
   }, [q, index])
 
   useEffect(() => {
-    if (open) {
-      setQ('')
-      setSel(0)
-      setTimeout(() => inputRef.current?.focus(), 30)
+    if (!open) return
+    setQ('')
+    setSel(0)
+    const t = setTimeout(() => inputRef.current?.focus(), 30)
+
+    // Whatever had focus gets it back on close — usually the ⌘K trigger in the
+    // sidebar. Without this, focus lands on <body> and the next Tab restarts
+    // from the top of the page.
+    const restoreTo = document.activeElement as HTMLElement | null
+    // The list scrolls; the page behind it should not.
+    const prevOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      clearTimeout(t)
+      document.body.style.overflow = prevOverflow
+      restoreTo?.focus?.()
     }
   }, [open])
 
   useEffect(() => setSel(0), [q])
+
+  // Keyboard selection has to drag the viewport with it, or arrowing past the
+  // fifth hit moves an invisible highlight.
+  useEffect(() => {
+    listRef.current
+      ?.querySelector(`[data-idx="${sel}"]`)
+      ?.scrollIntoView({ block: 'nearest' })
+  }, [sel])
 
   const go = (hit: Hit) => {
     onClose()
@@ -78,12 +100,18 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-night/80 backdrop-blur-sm"
           onClick={onClose}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') onClose()
+          }}
         >
           <motion.div
             initial={{ y: -12, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: -12, opacity: 0 }}
             transition={{ type: 'spring', stiffness: 400, damping: 32 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Search tracks, lessons and glossary"
             className="mx-auto mt-[12vh] w-[min(560px,92vw)] overflow-hidden rounded-xl border border-line bg-panel shadow-2xl"
             onClick={(e) => e.stopPropagation()}
           >
@@ -99,15 +127,26 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
                   if (e.key === 'Enter' && hits[sel]) go(hits[sel])
                   if (e.key === 'Escape') onClose()
                 }}
+                role="combobox"
+                aria-expanded
+                aria-controls="palette-hits"
+                aria-activedescendant={hits[sel] ? `palette-hit-${sel}` : undefined}
+                autoComplete="off"
                 placeholder="Search tracks, lessons, glossary…"
                 className="w-full bg-transparent py-3 text-sm text-ink placeholder:text-faint focus:outline-none"
               />
               <kbd className="rounded border border-line px-1.5 font-mono text-[10px] text-faint">esc</kbd>
             </div>
-            <ul className="max-h-[50vh] overflow-y-auto py-1">
+            <ul id="palette-hits" ref={listRef} role="listbox" className="max-h-[50vh] overflow-y-auto py-1">
               {hits.map((h, i) => (
-                <li key={`${h.kind}${h.title}`}>
+                // Lesson titles repeat across tracks ("Setup", "Wiring it up"),
+                // so the destination is what actually makes a hit unique.
+                <li key={`${h.kind}:${h.to}:${h.title}`}>
                   <button
+                    id={`palette-hit-${i}`}
+                    data-idx={i}
+                    role="option"
+                    aria-selected={i === sel}
                     onClick={() => go(h)}
                     onMouseEnter={() => setSel(i)}
                     className={`flex w-full items-baseline gap-3 px-4 py-2 text-left ${i === sel ? 'bg-panel2' : ''}`}

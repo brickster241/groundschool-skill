@@ -17,6 +17,7 @@ import {
 import { useCurriculum } from '../curriculum'
 import type { CodeAnchor, Meta } from '../data/types'
 import { absolutePath, openTarget } from '../lib/editorLink'
+import { copyText, isLocalOrigin } from '../lib/clipboard'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
@@ -28,7 +29,14 @@ import { ResourceRow } from '../components/ResourceRow'
 import { VideoEmbed } from '../components/VideoEmbed'
 import { Copy, inline } from '../components/text'
 
-/** Copy-to-clipboard button that acknowledges itself for a beat. */
+/**
+ * Copy-to-clipboard button that reports the truth.
+ *
+ * It must never show a tick it did not earn: off a non-secure origin (reading
+ * this on a phone over the LAN) the clipboard API is absent, and a button that
+ * flashes green while copying nothing is how you paste the wrong thing into a
+ * terminal. On failure it reveals the text instead, selectable.
+ */
 function CopyBit({
   value,
   title,
@@ -38,26 +46,36 @@ function CopyBit({
   title: string
   icon: React.ReactNode
 }) {
-  const [copied, setCopied] = useState(false)
+  const [state, setState] = useState<'idle' | 'ok' | 'fail'>('idle')
   useEffect(() => {
-    if (!copied) return
-    const t = setTimeout(() => setCopied(false), 1200)
+    if (state === 'idle') return
+    const t = setTimeout(() => setState('idle'), state === 'fail' ? 6000 : 1200)
     return () => clearTimeout(t)
-  }, [copied])
+  }, [state])
+
   return (
-    <button
-      onClick={() => {
-        navigator.clipboard?.writeText(value).then(
-          () => setCopied(true),
-          () => {},
-        )
-      }}
-      title={title}
-      aria-label={title}
-      className="shrink-0 text-faint transition-colors hover:text-ink"
-    >
-      {copied ? <Check className="h-3 w-3 text-ok" /> : icon}
-    </button>
+    <>
+      <button
+        onClick={() => {
+          copyText(value).then((ok) => setState(ok ? 'ok' : 'fail'))
+        }}
+        title={title}
+        aria-label={title}
+        className="shrink-0 text-faint transition-colors hover:text-ink"
+      >
+        {state === 'ok' ? <Check className="h-3 w-3 text-ok" /> : icon}
+      </button>
+      {state === 'fail' && (
+        <input
+          readOnly
+          value={value}
+          onFocus={(e) => e.currentTarget.select()}
+          ref={(el) => el?.select()}
+          aria-label={`${title} — copy manually`}
+          className="mt-1 w-full rounded border border-warn/40 bg-panel2 px-1.5 py-1 font-mono text-[10px] text-ink"
+        />
+      )}
+    </>
   )
 }
 
@@ -81,7 +99,7 @@ function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
       <FileCode2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-hud/70" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          {target ? (
+          {target?.href ? (
             <a
               href={target.href}
               title={`Open in ${target.editorName} — if nothing happens, copy the command instead`}
@@ -109,6 +127,25 @@ function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
         <p className="text-[11px] leading-snug text-dim">{anchor.note}</p>
       </div>
     </li>
+  )
+}
+
+/**
+ * Shown only when the page is being read from another device.
+ *
+ * `vscode://` is resolved by whichever machine has the browser open, so on a
+ * phone the link either does nothing or offers to install an editor there.
+ * The same origin also lacks a secure context, which is where `copyText`'s
+ * fallback earns its keep. Say so once, quietly, instead of letting three
+ * controls fail without explanation.
+ */
+function RemoteNotice() {
+  if (isLocalOrigin()) return null
+  return (
+    <p className="mt-2 border-t border-line/50 pt-2 text-[11px] leading-snug text-faint">
+      You are reading this from another device, so editor links would open on{' '}
+      <em>this</em> device, not the one holding the repo. Copy the path or command instead.
+    </p>
   )
 }
 
@@ -147,7 +184,14 @@ export function TrackPage() {
 
   if (!track) return <Navigate to="/tracks" replace />
 
-  const phase = c.phaseById.get(track.phase)!
+  // A curriculum can name a phase that isn't in the phases array. That is
+  // bad data, but it should be visible as bad data — not a white screen.
+  const phase = c.phaseById.get(track.phase) ?? {
+    id: track.phase,
+    name: 'Unassigned',
+    blurb: '',
+    color: 'var(--color-faint, #7a869a)',
+  }
   const ids = c.trackItemIds.get(track.id) ?? []
   const frac = fractionDone(ids, checks)
   const idx = c.tracks.findIndex((t) => t.id === track.id)
@@ -213,7 +257,7 @@ export function TrackPage() {
         </div>
       </motion.header>
 
-      <div className="mt-6 grid items-start gap-8 lg:grid-cols-[1fr_290px]">
+      <div className="mt-6 grid grid-cols-[minmax(0,1fr)] items-start gap-8 lg:grid-cols-[minmax(0,1fr)_290px]">
         {/* main column */}
         <div className="min-w-0 space-y-8">
           <section>
@@ -324,7 +368,7 @@ export function TrackPage() {
 
           {/* checkride */}
           {track.quiz && track.quiz.length > 0 && (
-            <Checkride trackId={track.id} questions={track.quiz} />
+            <Checkride key={track.id} trackId={track.id} questions={track.quiz} />
           )}
 
           {/* notes */}
@@ -369,10 +413,11 @@ export function TrackPage() {
           <div className="rounded-xl border border-line bg-panel p-4">
             <h2 className="placard mb-2">Code anchors</h2>
             <ul className="divide-y divide-line/50">
-              {track.anchors.map((a) => (
-                <AnchorRow key={a.path} meta={c.meta} anchor={a} />
+              {track.anchors.map((a, i) => (
+                <AnchorRow key={`${a.path}:${a.line ?? ''}:${i}`} meta={c.meta} anchor={a} />
               ))}
             </ul>
+            <RemoteNotice />
           </div>
           <div className="rounded-xl border border-line bg-panel p-2">
             <h2 className="placard px-2 pt-2 pb-1">Track resources</h2>
