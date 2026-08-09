@@ -153,11 +153,14 @@ textarea:focus-visible {
   height: auto;
   /*
    * Scroll rather than shrink on a narrow screen. A schematic authored at
-   * ~900px with 11px labels becomes 4px type on a phone, which is not "small"
+   * ~860px with 11px labels becomes 4px type on a phone, which is not "small"
    * — it is unreadable, and the reader has no way to know they are missing
    * anything. Below this floor the panel scrolls sideways instead.
+   *
+   * The floor is set per diagram by DiagramPanel, capped at its own intrinsic
+   * width, so a 20x20 inline glyph is never stretched to schematic size.
    */
-  min-width: 560px;
+  min-width: var(--diagram-min, 0px);
 }
 @media (min-width: 768px) {
   .diagram-svg svg {

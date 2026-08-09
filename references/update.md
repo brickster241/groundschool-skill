@@ -11,6 +11,33 @@ deletion.
 
 ## Protocol
 
+### 0. Refresh the app shell
+
+A generated ground school is a *copy* of the skill's template, so every bug the shell had on
+the day it was generated is still in it. Four dashboards can carry the same broken editor
+link for months, and the learner has no way to know the fix exists. UPDATE is the only moment
+that can close that gap, so it always starts here — even when the curriculum turns out not to
+need a single change.
+
+The split is fixed. **Skill-owned** (overwrite wholesale, never hand-edit in an instance):
+everything under `src/` *except* `src/branches/`, plus `vite.config.ts` and
+`vite-open-in-editor.ts`. **Instance-owned** (never touch): `src/branches/**`, the `<title>`
+in `index.html`, `name`/`scripts` in `package.json`, `README.md`, `CHANGELOG.md`, `docs/`.
+
+```bash
+rsync -a --delete --exclude 'branches/' "<skill dir>/template/src/" "<repo>/groundschool/src/"
+cp "<skill dir>/template/vite.config.ts" "<skill dir>/template/vite-open-in-editor.ts" \
+   "<repo>/groundschool/"
+```
+
+Then `npx tsc -b`. A shell refresh can introduce a **new required field** on a type the
+curriculum fills in — `Meta.editor` did exactly this — and the typecheck is what surfaces it.
+Fill any new field in the branch's own `meta.ts`; do not soften the type to make the error go
+away. If `package.json` gained a dependency, `npm install` too.
+
+Note in the CHANGELOG that the shell was refreshed and what the learner gets from it, in
+their terms ("code anchors now open your editor directly instead of asking the browser to").
+
 ### 1. Read the baseline
 
 Baselines are **per branch**: `src/branches/<branch>/meta.ts` → `baseline: { branch, commit,
@@ -71,6 +98,10 @@ lesson; T09 L2 deprecated, replacement in T09 L5"), not diff terms.
 
 ## Red flags
 
+- Skipping the shell refresh because "the curriculum is what changed" — a stale shell is the
+  failure mode this protocol exists to prevent.
+- Hand-editing a shell file inside an instance. It will be overwritten at the next update,
+  silently. Fix the skill's template and refresh.
 - Deleting or reordering anything in `tracks/*.ts` — the one unforgivable move.
 - Renumbering tracks to "keep them tidy".
 - A deprecation without a dated, explanatory `statusNote`.

@@ -16,7 +16,7 @@ import {
 } from 'lucide-react'
 import { useCurriculum } from '../curriculum'
 import type { CodeAnchor, Meta } from '../data/types'
-import { absolutePath, openTarget } from '../lib/editorLink'
+import { absolutePath, openTarget, requestOpen } from '../lib/editorLink'
 import { copyText, isLocalOrigin } from '../lib/clipboard'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { Checkride } from '../components/Checkride'
@@ -80,29 +80,55 @@ function CopyBit({
 }
 
 /**
- * One code anchor, with three ways to reach the file — because the pretty one
- * is the unreliable one.
+ * One code anchor, with three ways to reach the file, ordered by how reliable
+ * they actually are rather than how pretty they look.
  *
- * The protocol link (`vscode://…`) is offered first, but a browser will not
- * tell us whether it fired: an unregistered handler, a remembered "no", or a
- * blocked navigation all look identical to a click that did nothing. So the
- * shell command sits beside it as the escape hatch that always works, and the
+ * Clicking asks the dev server to run the editor CLI — see `requestOpen`.
+ * A `vscode://` protocol URL is the fallback for a statically served copy,
+ * and it is genuinely a fallback: the browser will not tell us whether it
+ * fired, because an unregistered handler, a remembered "no" and a blocked
+ * navigation all look identical to a click that did nothing. The shell
+ * command sits beside them as the escape hatch that always works, and the
  * plain path is there for everything else.
  */
 function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
   const target = openTarget(meta.editor, meta.repoPathAbs, anchor.path, anchor.line)
   const abs = target?.abs ?? absolutePath(meta.repoPathAbs, anchor.path)
   const shown = `${anchor.path}${anchor.line ? `:${anchor.line}` : ''}`
+  const [problem, setProblem] = useState<string | null>(null)
+
+  /*
+   * Ask the dev server first; only fall through to the protocol URL if there
+   * is no server to ask. The server route runs on the machine holding the
+   * repo and reports what happened; the protocol URL is dispatched by the
+   * browser, needs a permission prompt localhost is not allowed to remember,
+   * and fails silently. Preferring the loud, reliable one is the whole point.
+   */
+  const open = (e: React.MouseEvent) => {
+    if (!meta.editor) return
+    e.preventDefault()
+    setProblem(null)
+    requestOpen(meta.editor, abs, anchor.line).then((reason) => {
+      if (!reason) return
+      // No server route — let the browser try the handler after all.
+      if (target?.href && reason.startsWith('No dev server')) {
+        window.location.href = target.href
+        return
+      }
+      setProblem(reason)
+    })
+  }
 
   return (
     <li className="flex items-start gap-2 py-1.5">
       <FileCode2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-hud/70" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          {target?.href ? (
+          {meta.editor ? (
             <a
-              href={target.href}
-              title={`Open in ${target.editorName} — if nothing happens, copy the command instead`}
+              href={target?.href ?? '#'}
+              onClick={open}
+              title={`Open in ${target?.editorName ?? 'your editor'}`}
               className="flex min-w-0 items-center gap-1 font-mono text-[11px] break-all text-hud hover:underline"
             >
               <span className="min-w-0">{shown}</span>
@@ -124,6 +150,11 @@ function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
             />
           )}
         </div>
+        {problem && (
+          <p className="mt-1 text-[11px] leading-snug text-warn">
+            {problem} Copy the command instead.
+          </p>
+        )}
         <p className="text-[11px] leading-snug text-dim">{anchor.note}</p>
       </div>
     </li>

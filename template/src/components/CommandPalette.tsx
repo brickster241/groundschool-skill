@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'motion/react'
 import { Search } from 'lucide-react'
 import { useCurriculum } from '../curriculum'
+import { useScrollLock } from '../lib/scrollLock'
 
 interface Hit {
   kind: 'track' | 'lesson' | 'term'
@@ -65,16 +66,14 @@ export function CommandPalette({ open, onClose }: { open: boolean; onClose: () =
     // sidebar. Without this, focus lands on <body> and the next Tab restarts
     // from the top of the page.
     const restoreTo = document.activeElement as HTMLElement | null
-    // The list scrolls; the page behind it should not.
-    const prevOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
 
     return () => {
       clearTimeout(t)
-      document.body.style.overflow = prevOverflow
       restoreTo?.focus?.()
     }
   }, [open])
+
+  useScrollLock(open)
 
   useEffect(() => setSel(0), [q])
 

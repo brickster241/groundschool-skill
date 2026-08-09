@@ -18,6 +18,12 @@ Two modes — detect which applies before doing anything:
 | No `groundschool/` directory in the target repo (or user asks for a fresh one) | **GENERATE** |
 | `groundschool/` exists and user asks to update/sync/refresh it | **UPDATE** — follow `references/update.md` and skip the rest of this file |
 
+A generated dashboard is a *copy* of the bundled template, not a link to it. That is why
+UPDATE re-syncs the app shell before it touches curriculum: otherwise every dashboard ever
+generated keeps the bugs it was born with. The boundary is in `references/update.md` § 0 and
+it is the same one GENERATE relies on — **the shell is skill-owned, `src/branches/**` is
+instance-owned.** Never fork a shell file for one repo.
+
 Never run UPDATE spontaneously because commits happened. It runs only when the user asks.
 
 ## Mode: GENERATE
@@ -102,6 +108,17 @@ and confirm with your own eyes: dashboard renders with real numbers, one track p
 lessons/checklists/anchors, a check toggles and survives reload, no console errors. A
 dashboard delivered without this pass is not done. Screenshot for the final summary.
 
+Two integrations fail *silently* when misconfigured, so check them by hand rather than by
+sight:
+
+- **A code anchor opens the editor.** Click one. The click POSTs to `/__open` and the file
+  should appear in the editor named by `meta.editor`. If the row shows a reason instead,
+  believe it — usually `repoPathAbs` is wrong, or the editor's CLI is not on `PATH`.
+- **A resource with a URL previews inline.** Only an allow-listed host will; everything else
+  is deliberately an external link. See `src/lib/resourceEmbed.ts` before assuming a blank
+  panel is a bug — a frame refused by the remote host is undetectable from JavaScript, which
+  is exactly why the list exists.
+
 ### 7. Deliver
 
 Summarize: track list with one-liners, the counts (tracks/lessons/items/hours), where it
@@ -122,7 +139,7 @@ lives, how to run it, and the append-only editing rule.
 - An anchor path you never verified.
 - A track whose "why" paragraph would be true of any repo.
 - Editing the template's shell components for one repo's content needs (content belongs in
-  `src/data/`; the shell is shared).
+  `src/branches/<branch>/`; the shell is shared and gets overwritten on the next UPDATE).
 - Declaring done without the browser pass.
 - Running UPDATE because commits exist rather than because the user asked.
 

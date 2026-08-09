@@ -147,3 +147,39 @@ export function openTarget(
 
 export const EDITOR_IDS = Object.keys(EDITORS) as EditorId[]
 export const editorName = (id: EditorId): string => EDITORS[id].name
+
+/**
+ * Ask the dev server to open the file, since it is the process that actually
+ * lives on the machine holding the repo.
+ *
+ * This is the path that works. The `vscode://` link is the fallback, not the
+ * other way round: a browser gates protocol handlers behind a prompt it
+ * refuses to let an `http://localhost` origin remember, and resolves the URL
+ * on whatever device is showing the page rather than the one running the
+ * server. See vite-open-in-editor.ts.
+ *
+ * Resolves to `null` on success, or a sentence explaining the failure —
+ * including the case where the server has no such route, which is what
+ * happens when a ground school is served as static files by something other
+ * than Vite.
+ */
+export async function requestOpen(
+  editor: EditorId,
+  abs: string,
+  line?: number,
+): Promise<string | null> {
+  try {
+    const res = await fetch('/__open', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ editor, path: abs, line }),
+    })
+    if (res.ok) return null
+    // A plain static host answers 404 for an unknown POST route, and an HTML
+    // error page is not a reason we can quote at the reader.
+    const body = await res.json().catch(() => null)
+    return (body as { reason?: string } | null)?.reason ?? 'The server could not open it.'
+  } catch {
+    return 'No dev server to ask — this page is being served statically.'
+  }
+}
