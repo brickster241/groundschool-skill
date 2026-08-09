@@ -7,6 +7,7 @@ import {
 import { branchNames, useCurriculum } from '../curriculum'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { CommandPalette } from './CommandPalette'
+import { useSiteTheme } from '../lib/siteTheme'
 
 /**
  * Branch chips.
@@ -61,6 +62,7 @@ function BranchSwitcher() {
 
 export function Layout() {
   const c = useCurriculum()
+  useSiteTheme(c.meta)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const checks = useChecks()
   const { pathname, hash } = useLocation()

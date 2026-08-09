@@ -1,4 +1,40 @@
-# Design — the fixed system and the per-repo surface
+# Design — the theme belongs to the repo
+
+**The night-cockpit look is AMOS's, not the template's.** It was designed for a flight
+simulator, where it is earned; on a parser or an HTTP stack it reads as a costume — and a
+recognizable AI-generated one at that. Every generated ground school must decide its visual
+identity from the REPO'S OWN WORLD before touching the default.
+
+The mechanism: `meta.theme` (instance-owned) overrides the Tailwind `@theme` tokens and font
+stacks at runtime via `useSiteTheme`. The shell never changes; the identity does.
+
+## Deriving a theme
+
+Ask: what physical artifact, instrument, era, or discipline does this repo's subject live in?
+Take palette and type from THERE. Worked examples, shipped:
+
+| Repo | World | Identity | Type |
+|---|---|---|---|
+| GitEngine | patches, review, hunks | light "reviewed patch": paper, hunk-teal, ±red/green | Zilla Slab + Red Hat Mono |
+| PulseHTTP | wire signals, recorders | strip-chart paper, plotter blue, stamp red | Courier Prime (all roles) |
+| JSON-LP | grammar, railroad diagrams | book page, station capsules, textbook token colors | Literata + Spline Sans Mono |
+| AMOS | actual aviation | night cockpit (the one place it belongs) | Chakra Petch + IBM Plex Mono |
+
+## Rules
+
+- Never reuse another instance's theme because it "looks good" — derive from the subject.
+- Avoid the recognized AI-default looks: cockpit-grid dark panels; cream + display serif +
+  terracotta; near-black + single acid accent; broadsheet hairlines with zero radius. Any of
+  these is permitted only when the subject genuinely earns it.
+- Fonts: pick characterful faces that fit the world (via `fontsHref`); never default to
+  Inter, Roboto, Space Grotesk, or Chakra Petch out of habit.
+- Diagrams are authored SVGs with baked colors — themed instances keep diagram surfaces dark
+  (`darkDiagrams`, default true) unless the diagrams are re-authored for the light palette.
+- Phase colors live in instance data: when theming an instance light, re-pick phase colors
+  with enough contrast on the light ground.
+- The template's own example branch stays night-cockpit so the skill's screenshots stay
+  stable; GENERATE must always write a `theme` for real repos.
+
 
 The template ships a complete, deliberate visual identity. **Instantiation personalizes
 content, not chrome** — the design system is shared across every ground school so that the

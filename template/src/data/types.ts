@@ -198,4 +198,28 @@ export interface Meta {
   editor: EditorId | null
   /** Provenance: what the curriculum was authored against. UPDATE bumps this. */
   baseline: { branch: string; commit: string; date: string }
+  /**
+   * Optional visual identity for THIS repo's dashboard. The shell defaults to
+   * the night-cockpit look, which belongs to flight-simulation subjects — a
+   * parser or an HTTP stack should not be wearing it. Derive the theme from
+   * the repo's own world (its artifacts, its era, its materials) and override
+   * the `@theme` tokens; see references/design.md for worked palettes.
+   */
+  theme?: SiteTheme
+}
+
+/** Runtime overrides applied by useSiteTheme — instance-owned, shell-applied. */
+export interface SiteTheme {
+  /** Google Fonts (or any) stylesheet href injected at runtime. */
+  fontsHref?: string
+  /**
+   * CSS custom properties to override, e.g. `{'--color-night': '#f6f5f1'}`.
+   * The Tailwind v4 tokens in index.css are the vocabulary.
+   */
+  vars?: Record<string, string>
+  /**
+   * Diagrams are authored SVGs, usually light-on-dark; light themes keep
+   * diagram surfaces dark unless this is explicitly false. Default true.
+   */
+  darkDiagrams?: boolean
 }
