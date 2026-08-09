@@ -43,7 +43,13 @@ export const t00: TrackDraft = {
         { kind: 'write', text: 'WRITE items produce notes — predictions, runbooks, explanations' },
       ],
       video: {
-        youtubeId: 'dQw4w9WgXcQ',
+        // "Me at the zoo" — the first YouTube upload. Chosen because it is
+        // stable AND embeddable: rights holders can disable embedding per
+        // video, which renders a grey "Video unavailable" card that no
+        // pre-flight check can detect (oEmbed returns 200 either way and sends
+        // no CORS header). A placeholder that is embed-restricted makes a
+        // working integration look broken on first run.
+        youtubeId: 'jNQXAC9IVRw',
         label: 'Replace with a real lecture — embeds load only when clicked',
       },
       resources: [

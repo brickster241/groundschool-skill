@@ -11,7 +11,27 @@
  * is explicitly an external link. When in doubt, link out.
  */
 
-export type EmbedKind = 'youtube' | 'pdf'
+export type EmbedKind = 'youtube' | 'pdf' | 'page'
+
+/**
+ * Hosts verified (2026-07-31, by response header) to send neither
+ * `X-Frame-Options` nor a `frame-ancestors` CSP, so their pages render in a
+ * frame. These are the reference sites curricula actually cite.
+ *
+ * This list can rot — a site may add framing headers at any time, and there is
+ * no way to find out from the browser (see the note on detection below). The
+ * cost of a stale entry is one visibly blank panel next to a working
+ * open-in-tab link, which is why that link is never conditional.
+ */
+const FRAMEABLE_HOSTS = [
+  'www.rfc-editor.org',
+  'rfc-editor.org',
+  'datatracker.ietf.org',
+  'git-scm.com',
+  'en.wikipedia.org',
+  'man7.org',
+  'pkg.go.dev',
+]
 
 export interface EmbedTarget {
   kind: EmbedKind
@@ -52,8 +72,15 @@ function youtubeStart(u: URL): number | null {
 /**
  * Resolve a resource URL to something embeddable, or null when it should open
  * externally. `force` mirrors the author's explicit `embed` flag: `false`
- * suppresses a preview we would otherwise offer, `true` is *not* honoured for
- * arbitrary hosts — an author cannot will a blocked site into an iframe.
+ * suppresses a preview we would otherwise offer, `true` attempts one for a
+ * host not on the verified list.
+ *
+ * There is deliberately no "try it and fall back" path, because a framing
+ * block is undetectable from JavaScript: the iframe's `load` event fires for
+ * blocked frames exactly as it does for successful ones, there is no `error`
+ * event, and touching `contentDocument` throws for any cross-origin frame
+ * whether it rendered or not. The decision has to be made before render —
+ * hence an allow-list, and an open-in-tab link that is always present.
  */
 export function embedTarget(url: string | undefined, force?: boolean): EmbedTarget | null {
   if (!url || force === false) return null
@@ -83,7 +110,10 @@ export function embedTarget(url: string | undefined, force?: boolean): EmbedTarg
     }
   }
 
-  // arXiv abstract pages are framable but the PDF is what a learner wants.
+  // The /abs/ page — the URL people actually paste — sends BOTH
+  // `frame-ancestors 'none'` and `X-Frame-Options: SAMEORIGIN`, so framing it
+  // is refused outright. /pdf/ sends no framing headers and is served
+  // `content-disposition: inline`. This rewrite is mandatory, not cosmetic.
   const arxiv = u.hostname.endsWith('arxiv.org') && u.pathname.match(/^\/(?:abs|pdf)\/(.+?)(?:\.pdf)?$/)
   if (arxiv) {
     return { kind: 'pdf', src: `https://arxiv.org/pdf/${arxiv[1]}`, hint: 'ARXIV PDF' }
@@ -92,6 +122,15 @@ export function embedTarget(url: string | undefined, force?: boolean): EmbedTarg
   if (/\.pdf($|[?#])/i.test(u.pathname + u.search)) {
     return { kind: 'pdf', src: u.toString(), hint: 'PDF' }
   }
+
+  if (FRAMEABLE_HOSTS.includes(u.hostname)) {
+    return { kind: 'page', src: u.toString(), hint: 'PAGE' }
+  }
+
+  // An author who knows their source can force a preview. It is a real lever,
+  // not a wish: the panel renders, and if the host refuses framing the learner
+  // sees an empty box beside the open-in-tab link rather than a broken app.
+  if (force === true) return { kind: 'page', src: u.toString(), hint: 'PAGE' }
 
   // Everything else: an honest external link beats a blank rectangle.
   return null

@@ -24,8 +24,10 @@ export interface Resource {
    * preview; everything else opens externally, because most sites refuse
    * framing and a blocked iframe is a blank box).
    *
-   * Set `false` to suppress a preview we would otherwise offer. Setting `true`
-   * cannot force an arbitrary host to allow framing — it is a hint, not a lever.
+   * Set `false` to suppress a preview we would otherwise offer, or `true` to
+   * attempt one for a host not on the verified list. Note that `true` cannot
+   * make a site allow framing — if it refuses, the panel is simply empty next
+   * to the open-in-tab link, which is always present.
    */
   embed?: boolean
 }
