@@ -96,7 +96,10 @@ Design decisions for any UI you touch (normally none) come from `references/desi
 ### 5. Wire into the host repo
 
 - Append `groundschool/` to the host repo's `.gitignore` (create if absent; skip if already
-  listed). Do not commit the host repo unless asked.
+  listed). **Guard against a missing trailing newline** — append with something like
+  `printf '\n%s\n' 'groundschool/' >> .gitignore`, never a bare `echo >>`: a file whose last
+  line has no newline will fuse with the appended entry (`.vscodegroundschool/`) and silently
+  ignore neither. Do not commit the host repo unless asked.
 - Inside `groundschool/`: `git init`, then an initial commit — the dashboard is its own
   repo with its own history (UPDATE runs append to it).
 - Write `groundschool/CHANGELOG.md` with a dated "Initial curriculum" entry naming the
