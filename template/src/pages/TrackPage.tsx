@@ -8,14 +8,15 @@ import {
   BookOpen,
   Check,
   Copy as CopyIcon,
-  ExternalLink,
   FileCode2,
   FlaskConical,
   SquareArrowOutUpRight,
   Telescope,
+  TerminalSquare,
 } from 'lucide-react'
 import { useCurriculum } from '../curriculum'
-import type { CodeAnchor, Meta, Resource } from '../data/types'
+import type { CodeAnchor, Meta } from '../data/types'
+import { absolutePath, openTarget } from '../lib/editorLink'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
@@ -23,83 +24,90 @@ import { DiagramPanel } from '../components/DiagramPanel'
 import { FlashDeck } from '../components/FlashDeck'
 import { NotesEditor } from '../components/NotesEditor'
 import { ProgressRing } from '../components/ProgressRing'
+import { ResourceRow } from '../components/ResourceRow'
 import { VideoEmbed } from '../components/VideoEmbed'
 import { Copy, inline } from '../components/text'
 
-/** vscode://file/abs/path:line — cursor and zed use the same scheme shape. */
-function editorHref(meta: Meta, anchor: CodeAnchor): string | null {
-  if (!meta.editor) return null
-  const abs = `${meta.repoPathAbs}/${anchor.path}`
-  const line = anchor.line ? `:${anchor.line}` : ''
-  return `${meta.editor}://file${abs}${line}`
+/** Copy-to-clipboard button that acknowledges itself for a beat. */
+function CopyBit({
+  value,
+  title,
+  icon,
+}: {
+  value: string
+  title: string
+  icon: React.ReactNode
+}) {
+  const [copied, setCopied] = useState(false)
+  useEffect(() => {
+    if (!copied) return
+    const t = setTimeout(() => setCopied(false), 1200)
+    return () => clearTimeout(t)
+  }, [copied])
+  return (
+    <button
+      onClick={() => {
+        navigator.clipboard?.writeText(value).then(
+          () => setCopied(true),
+          () => {},
+        )
+      }}
+      title={title}
+      aria-label={title}
+      className="shrink-0 text-faint transition-colors hover:text-ink"
+    >
+      {copied ? <Check className="h-3 w-3 text-ok" /> : icon}
+    </button>
+  )
 }
 
+/**
+ * One code anchor, with three ways to reach the file — because the pretty one
+ * is the unreliable one.
+ *
+ * The protocol link (`vscode://…`) is offered first, but a browser will not
+ * tell us whether it fired: an unregistered handler, a remembered "no", or a
+ * blocked navigation all look identical to a click that did nothing. So the
+ * shell command sits beside it as the escape hatch that always works, and the
+ * plain path is there for everything else.
+ */
 function AnchorRow({ meta, anchor }: { meta: Meta; anchor: CodeAnchor }) {
-  const [copied, setCopied] = useState(false)
-  const href = editorHref(meta, anchor)
+  const target = openTarget(meta.editor, meta.repoPathAbs, anchor.path, anchor.line)
+  const abs = target?.abs ?? absolutePath(meta.repoPathAbs, anchor.path)
+  const shown = `${anchor.path}${anchor.line ? `:${anchor.line}` : ''}`
+
   return (
     <li className="flex items-start gap-2 py-1.5">
       <FileCode2 className="mt-0.5 h-3.5 w-3.5 shrink-0 text-hud/70" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
-          {href ? (
+          {target ? (
             <a
-              href={href}
-              title={`Open in ${meta.editor}`}
+              href={target.href}
+              title={`Open in ${target.editorName} — if nothing happens, copy the command instead`}
               className="flex min-w-0 items-center gap-1 font-mono text-[11px] break-all text-hud hover:underline"
             >
-              <span className="min-w-0">{anchor.path}{anchor.line ? `:${anchor.line}` : ''}</span>
+              <span className="min-w-0">{shown}</span>
               <SquareArrowOutUpRight className="h-3 w-3 shrink-0 text-faint" />
             </a>
           ) : (
-            <span className="min-w-0 font-mono text-[11px] break-all text-hud">
-              {anchor.path}{anchor.line ? `:${anchor.line}` : ''}
-            </span>
+            <span className="min-w-0 font-mono text-[11px] break-all text-hud">{shown}</span>
           )}
-          <button
-            onClick={() => {
-              navigator.clipboard?.writeText(`${meta.repoPathAbs}/${anchor.path}`)
-              setCopied(true)
-              setTimeout(() => setCopied(false), 1200)
-            }}
+          <CopyBit
+            value={abs}
             title="Copy absolute path"
-            aria-label="Copy absolute path"
-            className="shrink-0"
-          >
-            {copied ? (
-              <Check className="h-3 w-3 text-ok" />
-            ) : (
-              <CopyIcon className="h-3 w-3 text-faint transition-colors hover:text-ink" />
-            )}
-          </button>
+            icon={<CopyIcon className="h-3 w-3" />}
+          />
+          {target && (
+            <CopyBit
+              value={target.cli}
+              title={`Copy shell command (${target.cli})`}
+              icon={<TerminalSquare className="h-3 w-3" />}
+            />
+          )}
         </div>
         <p className="text-[11px] leading-snug text-dim">{anchor.note}</p>
       </div>
-    </li>
-  )
-}
-
-function ResourceLink({ r }: { r: Resource }) {
-  const body = (
-    <>
-      <span className="rounded border border-line px-1 font-mono text-[9px] tracking-wider text-faint uppercase">
-        {r.kind}
-      </span>
-      <span className="min-w-0 flex-1 text-[13px] text-ink">{r.label}</span>
-      {r.url && <ExternalLink className="h-3 w-3 shrink-0 text-faint" />}
-    </>
-  )
-  const cls = 'flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-panel2'
-  return (
-    <li>
-      {r.url ? (
-        <a href={r.url} target="_blank" rel="noreferrer" className={cls}>
-          {body}
-        </a>
-      ) : (
-        <div className={cls}>{body}</div>
-      )}
-      {r.note && <p className="px-2 pb-1 text-[11px] text-dim">{r.note}</p>}
     </li>
   )
 }
@@ -272,7 +280,7 @@ export function TrackPage() {
                   {lesson.resources && lesson.resources.length > 0 && (
                     <ul className="border-t border-line/60 px-2 py-1.5">
                       {lesson.resources.map((r) => (
-                        <ResourceLink key={r.label} r={r} />
+                        <ResourceRow key={r.label} r={r} />
                       ))}
                     </ul>
                   )}
@@ -370,7 +378,7 @@ export function TrackPage() {
             <h2 className="placard px-2 pt-2 pb-1">Track resources</h2>
             <ul>
               {track.resources.map((r) => (
-                <ResourceLink key={r.label} r={r} />
+                <ResourceRow key={r.label} r={r} />
               ))}
             </ul>
           </div>

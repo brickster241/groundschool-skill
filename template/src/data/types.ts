@@ -1,3 +1,5 @@
+import type { EditorId } from '../lib/editorLink'
+
 export type ItemKind = 'read' | 'run' | 'build' | 'quiz' | 'watch' | 'write'
 
 /** One checklist row. `id` is assigned by the curriculum assembler from position. */
@@ -17,6 +19,15 @@ export interface Resource {
   url?: string
   kind: 'doc' | 'paper' | 'video' | 'code' | 'book'
   note?: string
+  /**
+   * Inline preview control. Omit to auto-detect from the URL (YouTube and PDFs
+   * preview; everything else opens externally, because most sites refuse
+   * framing and a blocked iframe is a blank box).
+   *
+   * Set `false` to suppress a preview we would otherwise offer. Setting `true`
+   * cannot force an arbitrary host to allow framing — it is a hint, not a lever.
+   */
+  embed?: boolean
 }
 
 /** Optional inline YouTube embed for a lesson. Loads only when clicked. */
@@ -177,8 +188,12 @@ export interface Meta {
   systemMapTitle: string
   /** Flow annotation on the schematic, e.g. "intent ▼ telemetry ▲". */
   systemMapFlow: string
-  /** Editor for code-anchor deep-links; null renders copy-only anchors. */
-  editor: 'vscode' | 'cursor' | 'zed' | null
+  /**
+   * Editor for code-anchor deep-links; `null` renders copy-only anchors.
+   * Anchors always offer the absolute path and a shell command too, because
+   * protocol handlers can fail silently and the browser never tells us.
+   */
+  editor: EditorId | null
   /** Provenance: what the curriculum was authored against. UPDATE bumps this. */
   baseline: { branch: string; commit: string; date: string }
 }

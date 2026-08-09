@@ -71,7 +71,28 @@ export const t00: TrackDraft = {
     'Two or three per track. If you cannot write one, the track is too abstract — fix the track.',
   ],
   resources: [
-    { label: 'Track-level canonical resource', url: 'https://example.com', kind: 'doc' },
-    { label: 'A resource without a URL renders as a plain row', kind: 'book', note: 'Use for books/papers cited by name.' },
+    {
+      label: 'A YouTube link previews inline — click the row',
+      url: 'https://www.youtube.com/watch?v=lJ8ydIuPFeU',
+      kind: 'video',
+      note: 'watch?v=, youtu.be/ and /embed/ are all detected, and ?t=1m30s is honoured. Nothing loads until clicked.',
+    },
+    {
+      label: 'An arXiv link opens the PDF inline',
+      url: 'https://arxiv.org/abs/1706.03762',
+      kind: 'paper',
+      note: 'The /abs/ page is rewritten to /pdf/ automatically. Any .pdf URL previews the same way.',
+    },
+    {
+      label: 'Most other sites refuse framing, so they open in a tab',
+      url: 'https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/429',
+      kind: 'doc',
+      note: 'Deliberate: a blocked iframe renders as a blank box, which is worse than an honest link.',
+    },
+    {
+      label: 'A resource without a URL renders as a plain row',
+      kind: 'book',
+      note: 'Use for books and papers cited by name.',
+    },
   ],
 }
