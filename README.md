@@ -6,7 +6,7 @@ learning dashboard that lives at `<repo>/groundschool/` and remembers where you 
 **[▶ Live demo](https://brickster241.github.io/groundschool-skill/)** — the skill run on its
 own repository. No install, no account.
 
-![The flight deck of the template's own ground school](docs/img/dashboard.png)
+![The flight deck of a generated ground school — GitEngine's, wearing its own teal review-room tuning](docs/img/dashboard.png)
 
 ## Install & cook
 
