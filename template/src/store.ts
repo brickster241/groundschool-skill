@@ -22,6 +22,8 @@ interface ProgressState {
   slices: Record<string, Slice>
   setBranch: (branch: string) => void
   toggle: (id: string) => void
+  /** Mark every id done (idempotent) — the course-mode "complete & continue". */
+  completeAll: (ids: string[]) => void
   setNote: (key: string, md: string) => void
   recordQuiz: (trackId: string, score: number) => void
   setLastTrack: (slug: string) => void
@@ -47,6 +49,15 @@ export const useProgress = create<ProgressState>()(
             const checks = { ...sl.checks }
             if (checks[id]) delete checks[id]
             else checks[id] = Date.now()
+            return { checks }
+          }),
+        ),
+      completeAll: (ids) =>
+        set((s) =>
+          mutate(s, (sl) => {
+            const checks = { ...sl.checks }
+            const now = Date.now()
+            for (const id of ids) if (!checks[id]) checks[id] = now
             return { checks }
           }),
         ),

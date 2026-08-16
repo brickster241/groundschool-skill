@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useLocation, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { motion } from 'motion/react'
 import {
   ArrowLeft,
@@ -7,6 +7,7 @@ import {
   Archive,
   BookOpen,
   Check,
+  CheckCheck,
   Copy as CopyIcon,
   FileCode2,
   FlaskConical,
@@ -18,6 +19,7 @@ import { useCurriculum } from '../curriculum'
 import type { CodeAnchor, Meta } from '../data/types'
 import { absolutePath, openTarget, requestOpen } from '../lib/editorLink'
 import { copyText, isLocalOrigin } from '../lib/clipboard'
+import { courseSequence, stopHref } from '../lib/course'
 import { fractionDone, useChecks, useProgress } from '../store'
 import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
@@ -178,6 +180,70 @@ function RemoteNotice() {
       You are reading this from another device, so editor links would open on{' '}
       <em>this</em> device, not the one holding the repo. Copy the path or command instead.
     </p>
+  )
+}
+
+/**
+ * Course-mode footer under each lesson: previous · complete & continue · next.
+ *
+ * The dashboard is a map, but course-grinders want a rail — the Udemy verbs.
+ * This lives per lesson so it works whether you arrived by scrolling or by
+ * deep-link, and "complete & continue" both ticks every item and carries you
+ * to the next lesson (across track boundaries), scrolled into view.
+ */
+function LessonNav({ lessonId, itemIds }: { lessonId: string; itemIds: string[] }) {
+  const c = useCurriculum()
+  const checks = useChecks()
+  const completeAll = useProgress((s) => s.completeAll)
+  const nav = useNavigate()
+
+  const seq = courseSequence(c)
+  const i = seq.findIndex((s) => s.lessonId === lessonId)
+  if (i === -1) return null
+  const prev = i > 0 ? seq[i - 1] : undefined
+  const next = i < seq.length - 1 ? seq[i + 1] : undefined
+  const done = itemIds.length > 0 && itemIds.every((id) => checks[id])
+
+  const go = (href: string) => {
+    // Same-page hash jumps do not remount; scroll the target ourselves.
+    nav(href)
+    const id = href.split('#')[1]
+    requestAnimationFrame(() =>
+      document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    )
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-t border-line px-3 py-2.5">
+      <button
+        onClick={() => prev && go(stopHref(prev))}
+        disabled={!prev}
+        className="flex items-center gap-1 rounded-md border border-line px-2.5 py-1.5 font-mono text-[11px] text-dim transition-colors hover:text-ink disabled:opacity-30"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" /> Prev
+      </button>
+      <button
+        onClick={() => {
+          completeAll(itemIds)
+          if (next) go(stopHref(next))
+        }}
+        className={`flex flex-1 items-center justify-center gap-1.5 rounded-md px-3 py-1.5 font-mono text-[11px] transition-colors ${
+          done
+            ? 'border border-ok/40 text-ok'
+            : 'bg-amber text-night hover:opacity-90'
+        }`}
+      >
+        <CheckCheck className="h-3.5 w-3.5" />
+        {done ? (next ? 'Done — continue' : 'Done') : next ? 'Complete & continue' : 'Complete lesson'}
+      </button>
+      <button
+        onClick={() => next && go(stopHref(next))}
+        disabled={!next}
+        className="flex items-center gap-1 rounded-md border border-line px-2.5 py-1.5 font-mono text-[11px] text-dim transition-colors hover:text-ink disabled:opacity-30"
+      >
+        Next <ArrowRight className="h-3.5 w-3.5" />
+      </button>
+    </div>
   )
 }
 
@@ -360,6 +426,7 @@ export function TrackPage() {
                       ))}
                     </ul>
                   )}
+                  <LessonNav lessonId={lesson.id} itemIds={lids} />
                 </div>
               )
             })}
