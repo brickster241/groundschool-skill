@@ -1,3 +1,4 @@
+import type { ComponentType } from 'react'
 import type { EditorId } from '../lib/editorLink'
 
 export type ItemKind = 'read' | 'run' | 'build' | 'quiz' | 'watch' | 'write'
@@ -82,6 +83,61 @@ export interface DiagramSpec {
   svg: string
 }
 
+/**
+ * ——— Articles: the long-form textbook layer ———
+ *
+ * A track can carry full chapters — derivations, display math, worked
+ * examples, callouts, figures — authored as typed blocks so every article
+ * shares the shell's typography. Math is KaTeX TeX source; the renderer
+ * loads KaTeX lazily, so branches without articles pay nothing.
+ */
+export type ArticleBlock =
+  | { kind: 'h2'; text: string }
+  | { kind: 'h3'; text: string }
+  /** Paragraph. `code`, **bold**, *italic*, and inline math between $…$ . */
+  | { kind: 'p'; text: string }
+  /** Display equation. `label` renders as a right-margin equation tag, e.g. "(2.4)". */
+  | { kind: 'math'; tex: string; label?: string }
+  /**
+   * Aside box. Tones: `note` = context, `trap` = misconception/pitfall,
+   * `street` = practitioner lore the books skip, `canon` = the standard,
+   * verified way (with its source).
+   */
+  | { kind: 'callout'; tone: 'note' | 'trap' | 'street' | 'canon'; title: string; text: string }
+  /** Inline figure — same contract as DiagramSpec (raw SVG, sanitized + id-namespaced). */
+  | { kind: 'figure'; title: string; svg: string; caption?: string }
+  | { kind: 'code'; lang?: string; code: string; caption?: string }
+  /** Cells support the same inline formatting as paragraphs (math included). */
+  | { kind: 'table'; head: string[]; rows: string[][]; caption?: string }
+  /** Numbered derivation / worked example. Steps may mix prose and display math. */
+  | { kind: 'worked'; title: string; steps: { text?: string; tex?: string }[] }
+  /** Embed one of the track's widgets inline at this point, by WidgetSpec id. */
+  | { kind: 'widget'; id: string }
+
+export interface Article {
+  id: string
+  title: string
+  /** One-line dek under the title. */
+  subtitle?: string
+  blocks: ArticleBlock[]
+}
+
+/**
+ * ——— Widgets: branch-owned interactive instruments ———
+ *
+ * The component is authored inside the branch folder (instance-owned code);
+ * the shell only frames it (placard title, caption, error boundary). Widgets
+ * referenced from an article's `widget` block render inline in the chapter;
+ * the rest render in the track's Instruments section.
+ */
+export interface WidgetSpec {
+  id: string
+  title: string
+  /** What to try and what to look for. Shown under the instrument. */
+  caption?: string
+  component: ComponentType
+}
+
 /** One Checkride question. Distractors should be real misconceptions, not filler. */
 export interface QuizQuestion {
   prompt: string
@@ -116,12 +172,19 @@ export interface Track {
   cards?: Flashcard[]
   /** Attached at assemble time from the branch's diagrams map — do not author on drafts. */
   diagrams?: DiagramSpec[]
+  /** Attached at assemble time from the branch's articles map — do not author on drafts. */
+  articles?: Article[]
+  /** Attached at assemble time from the branch's widgets map — do not author on drafts. */
+  widgets?: WidgetSpec[]
   /** Set by the UPDATE protocol only (see Lesson.status). */
   status?: 'deprecated'
   statusNote?: string
 }
 
-export type TrackDraft = Omit<Track, 'lessons' | 'quiz' | 'cards' | 'diagrams'> & {
+export type TrackDraft = Omit<
+  Track,
+  'lessons' | 'quiz' | 'cards' | 'diagrams' | 'articles' | 'widgets'
+> & {
   lessons: LessonDraft[]
 }
 
@@ -166,6 +229,10 @@ export interface BranchBundle {
   quizzes: Record<string, QuizQuestion[]>
   flashcards: Record<string, Flashcard[]>
   diagrams: Record<string, DiagramSpec[]>
+  /** Optional: long-form chapters per track. See Article. */
+  articles?: Record<string, Article[]>
+  /** Optional: interactive instruments per track. See WidgetSpec. */
+  widgets?: Record<string, WidgetSpec[]>
 }
 
 /** Per-branch configuration. The ONLY place the app shell reads branding from. */

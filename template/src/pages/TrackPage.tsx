@@ -21,9 +21,11 @@ import { absolutePath, openTarget, requestOpen } from '../lib/editorLink'
 import { copyText, isLocalOrigin } from '../lib/clipboard'
 import { courseSequence, stopHref } from '../lib/course'
 import { fractionDone, useChecks, useProgress } from '../store'
+import { ArticleReader } from '../components/ArticleReader'
 import { Checkride } from '../components/Checkride'
 import { CheckRow } from '../components/CheckRow'
 import { DiagramPanel } from '../components/DiagramPanel'
+import { WidgetPanel } from '../components/WidgetPanel'
 import { FlashDeck } from '../components/FlashDeck'
 import { NotesEditor } from '../components/NotesEditor'
 import { ProgressRing } from '../components/ProgressRing'
@@ -296,6 +298,15 @@ export function TrackPage() {
   const prev = idx > 0 ? c.tracks[idx - 1] : undefined
   const next = idx < c.tracks.length - 1 ? c.tracks[idx + 1] : undefined
 
+  // Widgets referenced from a chapter render inline there; the rest get the
+  // Instruments section so no authored widget can silently vanish.
+  const embedded = new Set(
+    (track.articles ?? []).flatMap((a) =>
+      a.blocks.filter((b) => b.kind === 'widget').map((b) => (b.kind === 'widget' ? b.id : '')),
+    ),
+  )
+  const standaloneWidgets = (track.widgets ?? []).filter((w) => !embedded.has(w.id))
+
   return (
     <div className="mx-auto max-w-6xl px-5 py-8 md:py-10">
       {/* header */}
@@ -378,6 +389,25 @@ export function TrackPage() {
             <h2 className="placard mb-1.5">Why this repo does it this way</h2>
             <Copy text={track.why} className="text-[13px] leading-relaxed text-dim" />
           </section>
+
+          {/* chapters — the long-form textbook layer */}
+          {track.articles && track.articles.length > 0 && (
+            <section className="space-y-5">
+              {track.articles.map((a) => (
+                <ArticleReader key={a.id} article={a} widgets={track.widgets} />
+              ))}
+            </section>
+          )}
+
+          {/* instruments not embedded in a chapter */}
+          {standaloneWidgets.length > 0 && (
+            <section className="space-y-4">
+              <h2 className="placard">Instruments — hands on</h2>
+              {standaloneWidgets.map((w) => (
+                <WidgetPanel key={w.id} spec={w} />
+              ))}
+            </section>
+          )}
 
           {/* lessons */}
           <section className="space-y-5">

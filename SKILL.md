@@ -89,7 +89,11 @@ feature), `pipeline.ts`, `glossary.ts`, `planner.ts` (optional), `flashcards.ts`
 revision decks — author these for every substantial track), `quizzes.ts` (Checkrides —
 optional per track, concept-weighted), `diagrams.ts` + `diagrams/*.svg` (architecture
 figures for every architecture-heavy track — audit the repo's own diagrams first per
-analysis.md; accuracy over decoration), and the phases/imports in the branch's `index.ts`.
+analysis.md; accuracy over decoration), `articles.ts` (optional long-form chapters —
+typed blocks with lazy KaTeX math, callouts, figures, worked derivations; for theory-heavy
+subjects where checklists alone go thin), `widgets.tsx` (optional interactive instruments —
+branch-owned React components the shell frames and crash-isolates; embed them mid-chapter
+via `widget` blocks), and the phases/imports in the branch's `index.ts`.
 
 Design decisions for any UI you touch (normally none) come from `references/design.md`.
 

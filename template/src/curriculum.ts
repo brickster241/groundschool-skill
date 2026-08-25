@@ -47,6 +47,8 @@ function assembleTrack(draft: TrackDraft, b: BranchBundle): Track {
     quiz: b.quizzes[draft.id],
     cards: b.flashcards[draft.id],
     diagrams: b.diagrams[draft.id],
+    articles: b.articles?.[draft.id],
+    widgets: b.widgets?.[draft.id],
   }
 }
 

@@ -11,6 +11,8 @@ import { pipeline } from './pipeline'
 import { quizzes } from './quizzes'
 import { flashcards } from './flashcards'
 import { diagrams } from './diagrams'
+import { articles } from './articles'
+import { widgets } from './widgets'
 
 /**
  * Phases group tracks into arcs. 4–6 phases reads well; each gets an
@@ -34,4 +36,6 @@ export const bundle: BranchBundle = {
   quizzes,
   flashcards,
   diagrams,
+  articles,
+  widgets,
 }

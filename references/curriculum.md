@@ -109,6 +109,31 @@ deck plus an auto-built glossary deck; track pages show their own deck) — auth
 - Don't duplicate the glossary — its deck is auto-generated. Track cards should test
   *relationships and behavior*, not term definitions.
 
+**articles.ts** — optional long-form chapters: `Record<trackId, Article[]>`. This is the
+textbook layer for subjects where the knowledge underneath the repo is a *discipline*
+(dynamics, estimation, protocol theory) and checklists alone would go thin. The bar:
+
+- Blocks in reading order: `h2`/`h3` structure, `p` prose (inline `$math$` allowed),
+  `math` display equations (label the ones prose refers back to), `callout`
+  (note = context, trap = misconception, street = practitioner lore, canon = the standard
+  with its source), `figure` (same SVG contract as diagrams), `code`, `table`, `worked`
+  (numbered derivations — author these first; they keep the prose honest), and `widget`
+  (embed an instrument mid-chapter where the text needs it).
+- A chapter *derives*, it does not survey: every equation used later must be reachable by
+  reading, and every symbol defined at first use. State the convention you write in
+  (quaternion ordering, frame names, sign conventions) and flag where major sources differ.
+- Citation discipline: claims carry their source in-text (book + chapter/section, official
+  doc, or standard). No uncited physics.
+- Same append-only law as lessons: readers deep-link heading anchors and quote equation
+  labels. Edit prose in place; append blocks; deprecate rather than delete.
+
+**widgets.tsx** — optional interactive instruments: `Record<trackId, WidgetSpec[]>`, plain
+branch-owned React components (the shell provides the frame, placard, and an error
+boundary). Author one wherever *manipulating* a system teaches what reading cannot —
+integrate the real equations (RK4 in 20 lines beats a canned GIF), expose the parameters
+the chapter discusses, and write the caption as an experiment ("set e to 0.9 and watch
+where the speed goes"). A widget that merely decorates is cut.
+
 **diagrams.ts** — architecture diagrams: `Record<trackId, DiagramSpec[]>`, SVGs authored in
 the branch's `diagrams/` folder and imported with `?raw` (rendered inline, so the app's fonts
 and palette apply; lightbox for free). Text-only learning goes flat — give every

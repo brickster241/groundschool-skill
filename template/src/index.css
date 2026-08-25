@@ -143,6 +143,19 @@ textarea:focus-visible {
   outline: none;
 }
 
+/* KaTeX display blocks inside chapters — scroll, never overflow the page */
+.katex-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.katex-block .katex-display {
+  margin: 0.35em 0;
+}
+.katex-scroll .katex-display {
+  margin: 0.35em 0;
+  padding: 0.1em 0;
+}
+
 /* inline architecture diagrams */
 .diagram-svg {
   overflow-x: auto;
