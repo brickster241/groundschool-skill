@@ -106,6 +106,13 @@ export type ArticleBlock =
   | { kind: 'callout'; tone: 'note' | 'trap' | 'street' | 'canon'; title: string; text: string }
   /** Inline figure — same contract as DiagramSpec (raw SVG, sanitized + id-namespaced). */
   | { kind: 'figure'; title: string; svg: string; caption?: string }
+  /**
+   * Raster/photo figure. `src` is a path served by the app (put files in
+   * `public/`), `credit` is REQUIRED — only public-domain or properly
+   * licensed images belong in a curriculum, and the license rides with the
+   * block so it survives every future copy.
+   */
+  | { kind: 'image'; src: string; alt: string; title?: string; caption?: string; credit: string }
   | { kind: 'code'; lang?: string; code: string; caption?: string }
   /** Cells support the same inline formatting as paragraphs (math included). */
   | { kind: 'table'; head: string[]; rows: string[][]; caption?: string }

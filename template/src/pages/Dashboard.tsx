@@ -47,9 +47,13 @@ export function Dashboard() {
         transition={{ duration: 0.5 }}
       >
         <p className="placard">{c.meta.eyebrow}</p>
-        <h1 className="mt-2 font-display text-4xl leading-none font-bold tracking-tight text-ink md:text-5xl">
-          {c.meta.repoName}{' '}
-          <span className="border-b-3 border-amber pb-0.5">GROUND SCHOOL</span>
+        {/* meta.title drives the hero (its doc comment always promised so);
+            first word plain, the rest carries the accent underline. */}
+        <h1 className="mt-2 font-display text-4xl leading-none font-bold tracking-tight text-ink uppercase md:text-5xl">
+          {c.meta.title.split(' ')[0]}{' '}
+          <span className="border-b-3 border-amber pb-0.5">
+            {c.meta.title.split(' ').slice(1).join(' ') || 'GROUND SCHOOL'}
+          </span>
         </h1>
         <p className="mt-3 max-w-2xl text-sm leading-relaxed text-dim">{inline(c.meta.intro)}</p>
         <div className="mt-5 flex flex-wrap items-center gap-x-6 gap-y-2 font-mono text-[11px] tracking-wider text-faint">

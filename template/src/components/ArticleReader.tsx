@@ -134,6 +134,21 @@ function Block({
     }
     case 'figure':
       return <DiagramPanel d={{ title: b.title, caption: b.caption, svg: b.svg }} />
+    case 'image':
+      return (
+        <figure className="overflow-hidden rounded-xl border border-line bg-panel">
+          {b.title && (
+            <figcaption className="border-b border-line px-4 py-2">
+              <span className="placard">{b.title}</span>
+            </figcaption>
+          )}
+          <img src={b.src} alt={b.alt} loading="lazy" className="block w-full" />
+          <div className="border-t border-line/60 px-4 py-2">
+            {b.caption && <p className="text-[12px] leading-relaxed text-dim">{b.caption}</p>}
+            <p className="pt-0.5 font-mono text-[10px] text-faint">{b.credit}</p>
+          </div>
+        </figure>
+      )
     case 'code':
       return (
         <figure>

@@ -116,9 +116,12 @@ textbook layer for subjects where the knowledge underneath the repo is a *discip
 - Blocks in reading order: `h2`/`h3` structure, `p` prose (inline `$math$` allowed),
   `math` display equations (label the ones prose refers back to), `callout`
   (note = context, trap = misconception, street = practitioner lore, canon = the standard
-  with its source), `figure` (same SVG contract as diagrams), `code`, `table`, `worked`
-  (numbered derivations — author these first; they keep the prose honest), and `widget`
-  (embed an instrument mid-chapter where the text needs it).
+  with its source), `figure` (same SVG contract as diagrams), `image` (raster/photo from
+  `public/` — `credit` is required by the type and license-checked by the author: public
+  domain (NASA & other US-gov works) or a license the repo can carry; a real-hardware
+  photograph earns its place the same way a widget does, by teaching what prose cannot),
+  `code`, `table`, `worked` (numbered derivations — author these first; they keep the
+  prose honest), and `widget` (embed an instrument mid-chapter where the text needs it).
 - A chapter *derives*, it does not survey: every equation used later must be reachable by
   reading, and every symbol defined at first use. State the convention you write in
   (quaternion ordering, frame names, sign conventions) and flag where major sources differ.
